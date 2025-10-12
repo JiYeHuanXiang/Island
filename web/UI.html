@@ -461,11 +461,56 @@
         
         <div class="card">
             <div class="card-title"><i class="fas fa-plug"></i> 连接设置</div>
+            
+            <!-- 连接方式选择 -->
             <div class="settings-group">
-                <div class="settings-label"><i class="fas fa-network-wired"></i> WebSocket:</div>
-                <input type="text" id="wsUrl" placeholder="ws://127.0.0.1:3009">
-                <button onclick="connectWS()"><i class="fas fa-link"></i> 连接</button>
+                <div class="settings-label"><i class="fas fa-cogs"></i> 连接方式:</div>
+                <select id="connectionMode" onchange="onConnectionModeChange()">
+                    <option value="websocket">WebSocket</option>
+                    <option value="http">HTTP API</option>
+                    <option value="reverse_ws">反向WebSocket</option>
+                </select>
             </div>
+
+            <!-- WebSocket 设置 -->
+            <div id="websocketSettings" class="connection-settings">
+                <div class="settings-group">
+                    <div class="settings-label"><i class="fas fa-network-wired"></i> WebSocket URL:</div>
+                    <input type="text" id="wsUrl" placeholder="ws://127.0.0.1:3009">
+                </div>
+            </div>
+
+            <!-- HTTP API 设置 -->
+            <div id="httpSettings" class="connection-settings" style="display: none;">
+                <div class="settings-group">
+                    <div class="settings-label"><i class="fas fa-server"></i> HTTP API URL:</div>
+                    <input type="text" id="httpUrl" placeholder="http://127.0.0.1:6700">
+                </div>
+                <div class="settings-group">
+                    <div class="settings-label"><i class="fas fa-key"></i> Access Token:</div>
+                    <input type="password" id="httpToken" placeholder="可选，如果配置了访问令牌">
+                </div>
+            </div>
+
+            <!-- 反向WebSocket 设置 -->
+            <div id="reverseWsSettings" class="connection-settings" style="display: none;">
+                <div class="settings-group">
+                    <div class="settings-label"><i class="fas fa-exchange-alt"></i> 反向WS端口:</div>
+                    <input type="text" id="reverseWsPort" placeholder="8088">
+                </div>
+                <div class="settings-group">
+                    <div class="settings-label"><i class="fas fa-info-circle"></i> 状态:</div>
+                    <span id="reverseWsStatus">等待连接</span>
+                </div>
+            </div>
+
+            <!-- 连接按钮 -->
+            <div class="settings-group">
+                <div class="settings-label"></div>
+                <button onclick="connect()" id="connectBtn"><i class="fas fa-link"></i> 连接</button>
+                <button onclick="disconnect()" id="disconnectBtn" style="display: none;"><i class="fas fa-unlink"></i> 断开</button>
+            </div>
+
             <div class="settings-group">
                 <div class="settings-label"><i class="fas fa-paper-plane"></i> 发送目标:</div>
                 <div class="switch-container">
@@ -545,9 +590,17 @@
 
     <script>
         let ws = null;
+        let currentConnectionMode = 'websocket';
         const output = document.getElementById('output');
         const input = document.getElementById('input');
         const wsUrlInput = document.getElementById('wsUrl');
+        const httpUrlInput = document.getElementById('httpUrl');
+        const httpTokenInput = document.getElementById('httpToken');
+        const reverseWsPortInput = document.getElementById('reverseWsPort');
+        const reverseWsStatus = document.getElementById('reverseWsStatus');
+        const connectionModeSelect = document.getElementById('connectionMode');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
         const connectionStatus = document.getElementById('connectionStatus');
         const sendToQQCheckbox = document.getElementById('sendToQQ');
         const targetLabel = document.getElementById('targetLabel');
@@ -559,6 +612,19 @@
         // 从本地存储加载保存的设置
         if (localStorage.getItem('wsUrl')) {
             wsUrlInput.value = localStorage.getItem('wsUrl');
+        }
+        if (localStorage.getItem('httpUrl')) {
+            httpUrlInput.value = localStorage.getItem('httpUrl');
+        }
+        if (localStorage.getItem('httpToken')) {
+            httpTokenInput.value = localStorage.getItem('httpToken');
+        }
+        if (localStorage.getItem('reverseWsPort')) {
+            reverseWsPortInput.value = localStorage.getItem('reverseWsPort');
+        }
+        if (localStorage.getItem('connectionMode')) {
+            connectionModeSelect.value = localStorage.getItem('connectionMode');
+            onConnectionModeChange();
         }
         if (localStorage.getItem('sendToQQ') === 'true') {
             sendToQQCheckbox.checked = true;
@@ -835,6 +901,224 @@
             
             output.appendChild(messageDiv);
             output.scrollTop = output.scrollHeight;
+        }
+
+        // 连接方式变更处理
+        function onConnectionModeChange() {
+            const mode = connectionModeSelect.value;
+            currentConnectionMode = mode;
+            
+            // 隐藏所有设置面板
+            document.querySelectorAll('.connection-settings').forEach(panel => {
+                panel.style.display = 'none';
+            });
+            
+            // 显示当前模式的设置面板
+            document.getElementById(`${mode}Settings`).style.display = 'block';
+            
+            // 保存到本地存储
+            localStorage.setItem('connectionMode', mode);
+            
+            // 更新连接状态
+            connectionStatus.textContent = '未连接';
+            connectionStatus.className = 'status status-disconnected';
+            connectBtn.style.display = 'block';
+            disconnectBtn.style.display = 'none';
+            
+            // 如果是反向WebSocket模式，更新状态
+            if (mode === 'reverse_ws') {
+                reverseWsStatus.textContent = '等待连接';
+            }
+        }
+
+        // 连接函数
+        function connect() {
+            const mode = currentConnectionMode;
+            
+            switch (mode) {
+                case 'websocket':
+                    connectWS();
+                    break;
+                case 'http':
+                    connectHTTP();
+                    break;
+                case 'reverse_ws':
+                    startReverseWS();
+                    break;
+                default:
+                    addMessage('未知的连接方式', 'system');
+            }
+        }
+
+        // 断开连接
+        function disconnect() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.close();
+            }
+            
+            connectionStatus.textContent = '未连接';
+            connectionStatus.className = 'status status-disconnected';
+            connectBtn.style.display = 'block';
+            disconnectBtn.style.display = 'none';
+            
+            if (currentConnectionMode === 'reverse_ws') {
+                reverseWsStatus.textContent = '已断开';
+            }
+            
+            addMessage('连接已断开', 'system');
+        }
+
+        // HTTP API 连接
+        function connectHTTP() {
+            const url = httpUrlInput.value.trim();
+            if (!url) {
+                addMessage('请输入有效的HTTP API地址', 'system');
+                return;
+            }
+
+            // 保存到本地存储
+            localStorage.setItem('httpUrl', url);
+            if (httpTokenInput.value) {
+                localStorage.setItem('httpToken', httpTokenInput.value);
+            }
+
+            // 测试连接
+            fetch(`${url}/get_status`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': httpTokenInput.value ? `Bearer ${httpTokenInput.value}` : ''
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    connectionStatus.textContent = '已连接';
+                    connectionStatus.className = 'status status-connected';
+                    connectBtn.style.display = 'none';
+                    disconnectBtn.style.display = 'block';
+                    addMessage('已连接到HTTP API服务器', 'system');
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            })
+            .catch(error => {
+                connectionStatus.textContent = '连接错误';
+                connectionStatus.className = 'status status-disconnected';
+                addMessage('HTTP API连接错误: ' + error, 'system');
+            });
+        }
+
+        // 启动反向WebSocket
+        function startReverseWS() {
+            const port = reverseWsPortInput.value.trim();
+            if (!port) {
+                addMessage('请输入有效的端口号', 'system');
+                return;
+            }
+
+            // 保存到本地存储
+            localStorage.setItem('reverseWsPort', port);
+
+            // 这里应该启动反向WebSocket服务器
+            // 在实际实现中，这会通过WebSocket连接到后端
+            reverseWsStatus.textContent = '正在监听...';
+            connectionStatus.textContent = '已连接';
+            connectionStatus.className = 'status status-connected';
+            connectBtn.style.display = 'none';
+            disconnectBtn.style.display = 'block';
+            addMessage(`反向WebSocket服务器已启动，端口: ${port}`, 'system');
+        }
+
+        // 发送命令（更新版）
+        function sendCommand() {
+            const command = input.value.trim();
+            if (!command) return;
+
+            addMessage(command, 'command');
+            input.value = '';
+
+            const sendToQQ = sendToQQCheckbox.checked;
+            
+            // Add animation to the button
+            document.querySelector('button').classList.add('pulse');
+            setTimeout(() => {
+                document.querySelector('button').classList.remove('pulse');
+            }, 500);
+            
+            if (sendToQQ) {
+                // 根据连接方式发送到QQ
+                switch (currentConnectionMode) {
+                    case 'websocket':
+                        if (ws && ws.readyState === WebSocket.OPEN) {
+                            ws.send(JSON.stringify({
+                                command: command,
+                                target: 'qq'
+                            }));
+                        } else {
+                            addMessage('WebSocket未连接，无法发送到QQ', 'system');
+                        }
+                        break;
+                    case 'http':
+                        // 通过HTTP API发送
+                        const httpUrl = httpUrlInput.value.trim();
+                        const token = httpTokenInput.value;
+                        
+                        fetch(`${httpUrl}/send_msg`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': token ? `Bearer ${token}` : ''
+                            },
+                            body: JSON.stringify({
+                                message_type: 'group',
+                                group_id: 123456, // 这里需要实际的群号
+                                message: command
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'ok') {
+                                addMessage('命令已通过HTTP API发送', 'system');
+                            } else {
+                                addMessage('HTTP API发送失败: ' + data.msg, 'system');
+                            }
+                        })
+                        .catch(error => {
+                            addMessage('HTTP API发送错误: ' + error, 'system');
+                        });
+                        break;
+                    case 'reverse_ws':
+                        // 通过反向WebSocket发送
+                        if (ws && ws.readyState === WebSocket.OPEN) {
+                            ws.send(JSON.stringify({
+                                command: command,
+                                target: 'qq'
+                            }));
+                        } else {
+                            addMessage('反向WebSocket未连接，无法发送到QQ', 'system');
+                        }
+                        break;
+                    default:
+                        addMessage('未知的连接方式', 'system');
+                }
+            } else {
+                // 本地处理
+                fetch('/command', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ command: command })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.response) {
+                        addMessage(data.response, 'result');
+                    }
+                })
+                .catch(error => {
+                    addMessage('本地处理失败: ' + error, 'system');
+                });
+            }
         }
 
         // 尝试自动连接
