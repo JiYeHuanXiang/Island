@@ -425,6 +425,19 @@
             background: rgba(0,0,0,0.05);
         }
         
+        /* 连接设置样式 */
+        .connection-settings {
+            margin-top: 1rem;
+            border-top: 1px solid #eee;
+            padding-top: 1rem;
+        }
+
+        .connection-settings:first-child {
+            margin-top: 0;
+            border-top: none;
+            padding-top: 0;
+        }
+        
         @media (max-width: 768px) {
             body {
                 padding: 1rem;
@@ -494,1002 +507,444 @@
             <p>一个AI制作的COC(克苏鲁的呼唤)和DND(龙与地下城)TRPG骰子机器人</p>
         </div>
         
+        <!-- 统一的系统设置 -->
         <div class="card">
-            <div class="card-title"><i class="fas fa-plug"></i> 连接设置</div>
-            
-            <!-- 连接方式选择 -->
-            <div class="settings-group">
-                <div class="settings-label"><i class="fas fa-cogs"></i> 连接方式:</div>
-                <select id="connectionMode" onchange="onConnectionModeChange()">
-                    <option value="websocket">WebSocket</option>
-                    <option value="http">HTTP API</option>
-                    <option value="reverse_ws">反向WebSocket</option>
-                </select>
-            </div>
-
-            <!-- WebSocket 设置 -->
-            <div id="websocketSettings" class="connection-settings">
-                <div class="settings-group">
-                    <div class="settings-label"><i class="fas fa-network-wired"></i> WebSocket URL:</div>
-                    <input type="text" id="wsUrl" placeholder="ws://127.0.0.1:3009">
-                </div>
-            </div>
-
-            <!-- HTTP API 设置 -->
-            <div id="httpSettings" class="connection-settings" style="display: none;">
-                <div class="settings-group">
-                    <div class="settings-label"><i class="fas fa-server"></i> HTTP API URL:</div>
-                    <input type="text" id="httpUrl" placeholder="http://127.0.0.1:6700">
-                </div>
-                <div class="settings-group">
-                    <div class="settings-label"><i class="fas fa-key"></i> Access Token:</div>
-                    <input type="password" id="httpToken" placeholder="可选，如果配置了访问令牌">
-                </div>
-            </div>
-
-            <!-- 反向WebSocket 设置 -->
-            <div id="reverseWsSettings" class="connection-settings" style="display: none;">
-                <div class="settings-group">
-                    <div class="settings-label"><i class="fas fa-exchange-alt"></i> 反向WS端口:</div>
-                    <input type="text" id="reverseWsPort" placeholder="8088">
-                </div>
-                <div class="settings-group">
-                    <div class="settings-label"><i class="fas fa-info-circle"></i> 状态:</div>
-                    <span id="reverseWsStatus">等待连接</span>
-                </div>
-            </div>
-
-            <!-- 连接按钮 -->
-            <div class="settings-group">
-                <div class="settings-label"></div>
-                <button onclick="connect()" id="connectBtn"><i class="fas fa-link"></i> 连接</button>
-                <button onclick="disconnect()" id="disconnectBtn" style="display: none;" class="btn-danger"><i class="fas fa-unlink"></i> 断开连接</button>
-            </div>
-
-            <div class="settings-group">
-                <div class="settings-label"><i class="fas fa-paper-plane"></i> 发送目标:</div>
-                <div class="switch-container">
-                    <label class="switch">
-                        <input type="checkbox" id="sendToQQ">
-                        <span class="slider"></span>
-                    </label>
-                    <span class="switch-label" id="targetLabel">本地处理</span>
-                </div>
-            </div>
-            <div id="connectionStatus" class="status status-disconnected">
-                <i class="fas fa-exclamation-circle"></i> 未连接
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-title"><i class="fas fa-cog"></i> 程序设置</div>
+            <div class="card-title"><i class="fas fa-cog"></i> 系统设置</div>
             <div class="tab-container">
-                <div class="tab active" onclick="switchTab('program-settings')">程序配置</div>
-                <div class="tab" onclick="switchTab('admin-settings')">管理员QQ</div>
+                <div class="tab active" onclick="switchTab('connection-settings')">连接设置</div>
+                <div class="tab" onclick="switchTab('admin-settings')">管理员设置</div>
                 <div class="tab" onclick="switchTab('group-management')">群组管理</div>
             </div>
             
-            <div id="program-settings" class="admin-settings active">
+            <!-- 连接设置 -->
+            <div id="connection-settings" class="admin-settings active">
+                <!-- 基础设置 -->
                 <div class="settings-group">
                     <div class="settings-label"><i class="fas fa-server"></i> HTTP端口:</div>
-                    <input type="text" id="httpPort" placeholder="8080">
+                    <input type="text" id="httpPort" placeholder="8088">
                 </div>
+
+                <!-- 连接方式选择 -->
                 <div class="settings-group">
-                    <div class="settings-label"><i class="fas fa-plug"></i> 连接模式:</div>
-                    <select id="programConnectionMode">
+                    <div class="settings-label"><i class="fas fa-cogs"></i> 连接方式:</div>
+                    <select id="connectionMode" onchange="onConnectionModeChange()">
                         <option value="websocket">WebSocket</option>
                         <option value="http">HTTP API</option>
                         <option value="reverse_ws">反向WebSocket</option>
                     </select>
                 </div>
-                <div class="settings-group">
-                    <div class="settings-label"><i class="fas fa-network-wired"></i> WebSocket URL:</div>
-                    <input type="text" id="programWsUrl" placeholder="ws://127.0.0.1:3009">
+
+                <!-- WebSocket 设置 -->
+                <div id="websocketSettings" class="connection-settings">
+                    <div class="settings-group">
+                        <div class="settings-label"><i class="fas fa-network-wired"></i> WebSocket URL:</div>
+                        <input type="text" id="wsUrl" placeholder="ws://127.0.0.1:3009">
+                    </div>
                 </div>
-                <div class="settings-group">
-                    <div class="settings-label"><i class="fas fa-server"></i> HTTP API URL:</div>
-                    <input type="text" id="programHttpUrl" placeholder="http://127.0.0.1:6700">
+
+                <!-- HTTP API 设置 -->
+                <div id="httpSettings" class="connection-settings" style="display: none;">
+                    <div class="settings-group">
+                        <div class="settings-label"><i class="fas fa-server"></i> HTTP API URL:</div>
+                        <input type="text" id="httpUrl" placeholder="http://127.0.0.1:6700">
+                    </div>
+                    <div class="settings-group">
+                        <div class="settings-label"><i class="fas fa-key"></i> Access Token:</div>
+                        <input type="password" id="httpToken" placeholder="可选，如果配置了访问令牌">
+                    </div>
                 </div>
-                <div class="settings-group">
-                    <div class="settings-label"><i class="fas fa-key"></i> Access Token:</div>
-                    <input type="password" id="programHttpToken" placeholder="可选，如果配置了访问令牌">
+
+                <!-- 反向WebSocket 设置 -->
+                <div id="reverseWsSettings" class="connection-settings" style="display: none;">
+                    <div class="settings-group">
+                        <div class="settings-label"><i class="fas fa-exchange-alt"></i> 反向WS端口:</div>
+                        <input type="text" id="reverseWsPort" placeholder="8088">
+                    </div>
                 </div>
+
+                <!-- 连接按钮 -->
                 <div class="settings-group">
-                    <div class="settings-label"><i class="fas fa-exchange-alt"></i> 反向WS端口:</div>
-                    <input type="text" id="programReverseWsPort" placeholder="8088">
+                    <div class="settings-label"></div>
+                    <button onclick="connect()" id="connectBtn"><i class="fas fa-link"></i> 连接</button>
+                    <button onclick="disconnect()" id="disconnectBtn" style="display: none;" class="btn-danger"><i class="fas fa-unlink"></i> 断开连接</button>
+                </div>
+
+                <div class="settings-group">
+                    <div class="settings-label"><i class="fas fa-paper-plane"></i> 发送目标:</div>
+                    <div class="switch-container">
+                        <label class="switch">
+                            <input type="checkbox" id="sendToQQ">
+                            <span class="slider"></span>
+                        </label>
+                        <span class="switch-label" id="targetLabel">本地处理</span>
+                    </div>
+                </div>
+
+                <!-- 连接状态 -->
+                <div id="connectionStatus" class="status status-disconnected">
+                    <i class="fas fa-exclamation-circle"></i> 未连接
+                </div>
+            </div>
+
+            <!-- 管理员设置 -->
+            <div id="admin-settings" class="admin-settings">
+                <div class="settings-group">
+                    <div class="settings-label"><i class="fas fa-user-shield"></i> 管理员QQ号:</div>
+                    <input type="text" id="adminQQ" placeholder="输入管理员QQ号">
                 </div>
                 <div class="settings-group">
                     <div class="settings-label"></div>
-                    <button onclick="loadProgramSettings()"><i class="fas fa-download"></i> 加载当前设置</button>
-                    <button onclick="saveProgramSettings()"><i class="fas fa-save"></i> 保存设置到程序</button>
-                </div>
-                <div id="programSettingsStatus" class="status" style="display: none;">
-                    <i class="fas fa-check-circle"></i> 设置已保存
+                    <button onclick="saveAdminSettings()"><i class="fas fa-save"></i> 保存管理员设置</button>
                 </div>
             </div>
-            
-            <div id="admin-settings" class="admin-settings">
-                <div class="settings-group">
-                    <div class="settings-label"><i class="fas fa-user-shield"></i> 管理员QQ:</div>
-                    <input type="text" id="adminQQ" placeholder="输入管理员QQ号">
-                    <button onclick="saveAdminQQ()"><i class="fas fa-save"></i> 保存</button>
-                </div>
-                <div id="adminStatus" class="status" style="display: none;">
-                    <i class="fas fa-check-circle"></i> 设置已保存
-                </div>
-            </div>
-            
+
+            <!-- 群组管理 -->
             <div id="group-management" class="admin-settings">
                 <div class="settings-group">
-                    <div class="settings-label"><i class="fas fa-robot"></i> 机器人状态:</div>
-                    <div id="botStatus" class="status status-disconnected">
-                        <i class="fas fa-exclamation-circle"></i> 未获取群组信息
-                    </div>
+                    <div class="settings-label"><i class="fas fa-users"></i> 群组列表:</div>
                     <button onclick="refreshGroups()"><i class="fas fa-sync-alt"></i> 刷新群组</button>
                 </div>
-                <div class="group-list" id="groupList">
+                <div id="groupList" class="group-list">
                     <!-- 群组列表将在这里动态生成 -->
-                    <div class="system message">连接WebSocket后点击"刷新群组"获取群组列表</div>
                 </div>
             </div>
         </div>
 
+        <!-- 命令输入区域 -->
         <div class="card">
-            <div class="card-title"><i class="fas fa-book"></i> 使用说明</div>
-            <div class="help-content">
-                <p>骰子命令格式如下：</p>
-                <ul>
-                    <li><strong>.coc7</strong> - 生成7版COC调查员属性</li>
-                    <li><strong>.ra 70</strong> - 进行技能值为70的检定</li>
-                    <li><strong>.r 3d6</strong> - 投掷3个6面骰</li>
-                    <li><strong>.sc 1/1d6</strong> - 理智检定</li>
-                    <li><strong>.dnd</strong> - 生成DND角色属性</li>
-                    <li><strong>.r 1d20</strong> - 进行d20检定（用于攻击、技能检定等）</li>
-                    <li><strong>.r 2d6+3</strong> - 投掷2个6面骰并加3（用于伤害计算）</li>
-                    <li><strong>.save str</strong> - 进行力量豁免检定</li>
-                    <li><strong>.skill stealth</strong> - 进行潜行技能检定</li>
-                </ul>
-                <p>连接WebSocket后，可以切换"发送目标"将指令发送到QQ群</p>
-                <div class="command-example">.help</div>
-                <p>输入上述命令查看完整指令列表</p>
+            <div class="card-title"><i class="fas fa-terminal"></i> 命令输入</div>
+            <div class="input-group">
+                <input type="text" id="commandInput" placeholder="输入骰子命令，例如: .r 3d6" onkeypress="handleKeyPress(event)">
+                <button onclick="sendCommand()"><i class="fas fa-paper-plane"></i> 发送</button>
             </div>
         </div>
 
-        <div id="output" class="card"></div>
-        
-        <div class="input-group">
-            <input type="text" id="input" placeholder="输入指令（例：.coc7/.ra 70）" autocomplete="off">
-            <button onclick="sendCommand()"><i class="fas fa-dice"></i> 投掷骰子</button>
+        <!-- 输出区域 -->
+        <div class="card">
+            <div class="card-title"><i class="fas fa-scroll"></i> 输出日志</div>
+            <div id="output"></div>
+        </div>
+
+        <!-- 帮助信息 -->
+        <div class="card">
+            <div class="card-title"><i class="fas fa-question-circle"></i> 帮助信息</div>
+            <div class="help-content">
+                <p><strong>常用命令:</strong></p>
+                <ul>
+                    <li><strong>.r</strong> - 掷骰子 (例如: .r 3d6)</li>
+                    <li><strong>.coc</strong> - COC角色生成</li>
+                    <li><strong>.dnd</strong> - DND角色生成</li>
+                    <li><strong>.help</strong> - 显示帮助信息</li>
+                </ul>
+                <p><strong>连接方式说明:</strong></p>
+                <ul>
+                    <li><strong>WebSocket</strong> - 直接连接到QQ机器人的WebSocket服务</li>
+                    <li><strong>HTTP API</strong> - 通过HTTP API与QQ机器人通信</li>
+                    <li><strong>反向WebSocket</strong> - QQ机器人连接到本程序</li>
+                </ul>
+            </div>
         </div>
     </div>
 
     <script>
         let ws = null;
-        let currentConnectionMode = 'websocket';
-        const output = document.getElementById('output');
-        const input = document.getElementById('input');
-        const wsUrlInput = document.getElementById('wsUrl');
-        const httpUrlInput = document.getElementById('httpUrl');
-        const httpTokenInput = document.getElementById('httpToken');
-        const reverseWsPortInput = document.getElementById('reverseWsPort');
-        const reverseWsStatus = document.getElementById('reverseWsStatus');
-        const connectionModeSelect = document.getElementById('connectionMode');
-        const connectBtn = document.getElementById('connectBtn');
-        const disconnectBtn = document.getElementById('disconnectBtn');
-        const connectionStatus = document.getElementById('connectionStatus');
-        const sendToQQCheckbox = document.getElementById('sendToQQ');
-        const targetLabel = document.getElementById('targetLabel');
-        const adminQQInput = document.getElementById('adminQQ');
-        const adminStatus = document.getElementById('adminStatus');
-        const groupList = document.getElementById('groupList');
-        const botStatus = document.getElementById('botStatus');
+        let isConnected = false;
 
-        // 从本地存储加载保存的设置
-        if (localStorage.getItem('wsUrl')) {
-            wsUrlInput.value = localStorage.getItem('wsUrl');
-        }
-        if (localStorage.getItem('httpUrl')) {
-            httpUrlInput.value = localStorage.getItem('httpUrl');
-        }
-        if (localStorage.getItem('httpToken')) {
-            httpTokenInput.value = localStorage.getItem('httpToken');
-        }
-        if (localStorage.getItem('reverseWsPort')) {
-            reverseWsPortInput.value = localStorage.getItem('reverseWsPort');
-        }
-        if (localStorage.getItem('connectionMode')) {
-            connectionModeSelect.value = localStorage.getItem('connectionMode');
-            onConnectionModeChange();
-        }
-        if (localStorage.getItem('sendToQQ') === 'true') {
-            sendToQQCheckbox.checked = true;
-            targetLabel.textContent = '发送到QQ';
-        }
-        if (localStorage.getItem('adminQQ')) {
-            adminQQInput.value = localStorage.getItem('adminQQ');
-        }
-
-        // 监听开关变化
-        sendToQQCheckbox.addEventListener('change', function() {
-            const isChecked = this.checked;
-            targetLabel.textContent = isChecked ? '发送到QQ' : '本地处理';
-            localStorage.setItem('sendToQQ', isChecked);
-        });
-
-        // 切换标签页
+        // 标签页切换
         function switchTab(tabId) {
+            // 隐藏所有标签内容
             document.querySelectorAll('.admin-settings').forEach(tab => {
                 tab.classList.remove('active');
             });
+            
+            // 移除所有标签的激活状态
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
             });
             
+            // 显示选中的标签内容
             document.getElementById(tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
+            
+            // 激活选中的标签
+            event.target.classList.add('active');
         }
 
-        // 保存管理员QQ
-        function saveAdminQQ() {
-            const adminQQ = adminQQInput.value.trim();
-            if (!adminQQ) {
-                adminStatus.textContent = '请输入有效的QQ号';
-                adminStatus.style.display = 'block';
-                adminStatus.style.color = 'var(--danger)';
-                return;
-            }
-            
-            localStorage.setItem('adminQQ', adminQQ);
-            adminStatus.textContent = '管理员QQ已保存';
-            adminStatus.style.display = 'block';
-            adminStatus.style.color = 'var(--success)';
-            
-            // 如果有WebSocket连接，发送更新
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({
-                    type: 'admin',
-                    action: 'update',
-                    qq: adminQQ
-                }));
-            }
-            
-            setTimeout(() => {
-                adminStatus.style.display = 'none';
-            }, 3000);
-        }
-
-        // 刷新群组列表
-        function refreshGroups() {
-            if (!ws || ws.readyState !== WebSocket.OPEN) {
-                addMessage('WebSocket未连接，无法获取群组信息', 'system');
-                botStatus.className = 'status status-disconnected';
-                botStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> WebSocket未连接';
-                return;
-            }
-            
-            ws.send(JSON.stringify({
-                type: 'group',
-                action: 'list'
-            }));
-            
-            botStatus.className = 'status';
-            botStatus.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> 正在获取群组信息...';
-        }
-
-        // 退出群组
-        function leaveGroup(groupId) {
-            if (!ws || ws.readyState !== WebSocket.OPEN) {
-                addMessage('WebSocket未连接，无法执行操作', 'system');
-                return;
-            }
-            
-            if (confirm(`确定要退出群 ${groupId} 吗？`)) {
-                ws.send(JSON.stringify({
-                    type: 'group',
-                    action: 'leave',
-                    group_id: groupId
-                }));
-                
-                // 更新UI
-                const groupItem = document.querySelector(`.group-item[data-group-id="${groupId}"]`);
-                if (groupItem) {
-                    groupItem.querySelector('.group-actions').innerHTML = '<span>正在退出...</span>';
-                }
-            }
-        }
-
-        // 关闭群组功能
-        function disableGroup(groupId) {
-            if (!ws || ws.readyState !== WebSocket.OPEN) {
-                addMessage('WebSocket未连接，无法执行操作', 'system');
-                return;
-            }
-            
-            if (confirm(`确定要关闭群 ${groupId} 的骰子功能吗？`)) {
-                ws.send(JSON.stringify({
-                    type: 'group',
-                    action: 'disable',
-                    group_id: groupId
-                }));
-                
-                // 更新UI
-                const groupItem = document.querySelector(`.group-item[data-group-id="${groupId}"]`);
-                if (groupItem) {
-                    groupItem.querySelector('.group-actions').innerHTML = '<span>正在关闭...</span>';
-                }
-            }
-        }
-
-        // 更新群组列表
-        function updateGroupList(groups) {
-            if (!groups || groups.length === 0) {
-                groupList.innerHTML = '<div class="system message">没有找到任何群组</div>';
-                botStatus.className = 'status status-disconnected';
-                botStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> 没有找到任何群组';
-                return;
-            }
-            
-            let html = '';
-            groups.forEach(group => {
-                html += `
-                <div class="group-item" data-group-id="${group.id}">
-                    <div class="group-info">
-                        <strong>${group.name}</strong> (ID: ${group.id})
-                        <div class="group-status">状态: ${group.active ? '已启用' : '已禁用'}</div>
-                    </div>
-                    <div class="group-actions">
-                        <button class="btn-danger btn-sm" onclick="leaveGroup('${group.id}')">
-                            <i class="fas fa-sign-out-alt"></i> 退出
-                        </button>
-                        <button class="btn-warning btn-sm" onclick="disableGroup('${group.id}')">
-                            <i class="fas fa-power-off"></i> ${group.active ? '关闭' : '开启'}
-                        </button>
-                    </div>
-                </div>
-                `;
-            });
-            
-            groupList.innerHTML = html;
-            botStatus.className = 'status status-connected';
-            botStatus.innerHTML = `<i class="fas fa-check-circle"></i> 已加载 ${groups.length} 个群组`;
-        }
-
-        function connectWS() {
-            const url = wsUrlInput.value.trim();
-            if (!url) {
-                addMessage('请输入有效的WebSocket地址', 'system');
-                return;
-            }
-
-            // 保存到本地存储
-            localStorage.setItem('wsUrl', url);
-
-            if (ws) {
-                ws.close();
-            }
-
-            ws = new WebSocket(url);
-            
-            ws.onopen = function() {
-                connectionStatus.textContent = '已连接';
-                connectionStatus.className = 'status status-connected';
-                addMessage('已连接到WebSocket服务器', 'system');
-                
-                // 如果有保存的管理员QQ，发送到服务器
-                if (localStorage.getItem('adminQQ')) {
-                    ws.send(JSON.stringify({
-                        type: 'admin',
-                        action: 'update',
-                        qq: localStorage.getItem('adminQQ')
-                    }));
-                }
-            };
-            
-            ws.onclose = function() {
-                connectionStatus.textContent = '未连接';
-                connectionStatus.className = 'status status-disconnected';
-                addMessage('WebSocket连接已关闭', 'system');
-                
-                // 更新群组状态
-                botStatus.className = 'status status-disconnected';
-                botStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> WebSocket未连接';
-            };
-            
-            ws.onerror = function(error) {
-                connectionStatus.textContent = '连接错误';
-                connectionStatus.className = 'status status-disconnected';
-                addMessage('WebSocket连接错误: ' + error, 'system');
-            };
-            
-        ws.onmessage = function(event) {
-            try {
-                const data = JSON.parse(event.data);
-                
-                if (data.type === 'group' && data.action === 'list') {
-                    updateGroupList(data.groups);
-                } else if (data.type === 'group' && (data.action === 'leave' || data.action === 'disable')) {
-                    addMessage(`群组操作成功: ${data.message}`, 'system');
-                    refreshGroups(); // 刷新群组列表
-                } else {
-                    // 普通消息，先格式化再显示
-                    const formattedMessage = formatLogMessage(data);
-                    addMessage(formattedMessage, 'result');
-                }
-            } catch (e) {
-                // 不是JSON数据，直接显示
-                addMessage(event.data, 'result');
-            }
-        };
-        }
-
-        function sendCommand() {
-            const command = input.value.trim();
-            if (!command) return;
-
-            addMessage(command, 'command');
-            input.value = '';
-
-            const sendToQQ = sendToQQCheckbox.checked;
-            
-            // Add animation to the button
-            document.querySelector('button').classList.add('pulse');
-            setTimeout(() => {
-                document.querySelector('button').classList.remove('pulse');
-            }, 500);
-            
-            if (sendToQQ) {
-                // 发送到QQ
-                if (ws && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({
-                        command: command,
-                        target: 'qq'
-                    }));
-                } else {
-                    addMessage('WebSocket未连接，无法发送到QQ', 'system');
-                }
-            } else {
-                // 本地处理
-                fetch('/command', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ command: command })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.response) {
-                        addMessage(data.response, 'result');
-                    }
-                })
-                .catch(error => {
-                    addMessage('本地处理失败: ' + error, 'system');
-                });
-            }
-        }
-
-        function addMessage(text, type) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${type}`;
-            
-            const timestamp = new Date().toLocaleTimeString();
-            messageDiv.innerHTML = `<span class="timestamp">${timestamp}</span> ${text}`;
-            
-            output.appendChild(messageDiv);
-            output.scrollTop = output.scrollHeight;
-        }
-
-        // 连接方式变更处理
+        // 连接方式改变时的处理
         function onConnectionModeChange() {
-            const mode = connectionModeSelect.value;
-            currentConnectionMode = mode;
+            const mode = document.getElementById('connectionMode').value;
             
-            // 隐藏所有设置面板
-            document.querySelectorAll('.connection-settings').forEach(panel => {
-                panel.style.display = 'none';
-            });
+            // 隐藏所有连接设置
+            document.getElementById('websocketSettings').style.display = 'none';
+            document.getElementById('httpSettings').style.display = 'none';
+            document.getElementById('reverseWsSettings').style.display = 'none';
             
-            // 显示当前模式的设置面板
-            document.getElementById(`${mode}Settings`).style.display = 'block';
-            
-            // 保存到本地存储
-            localStorage.setItem('connectionMode', mode);
-            
-            // 更新连接状态
-            connectionStatus.textContent = '未连接';
-            connectionStatus.className = 'status status-disconnected';
-            connectBtn.style.display = 'block';
-            disconnectBtn.style.display = 'none';
-            
-            // 如果是反向WebSocket模式，更新状态
-            if (mode === 'reverse_ws') {
-                reverseWsStatus.textContent = '等待连接';
+            // 显示选中的连接设置
+            if (mode === 'websocket') {
+                document.getElementById('websocketSettings').style.display = 'block';
+            } else if (mode === 'http') {
+                document.getElementById('httpSettings').style.display = 'block';
+            } else if (mode === 'reverse_ws') {
+                document.getElementById('reverseWsSettings').style.display = 'block';
             }
         }
+
+        // 发送目标切换
+        document.getElementById('sendToQQ').addEventListener('change', function() {
+            const label = document.getElementById('targetLabel');
+            label.textContent = this.checked ? '发送到QQ' : '本地处理';
+        });
 
         // 连接函数
         function connect() {
-            const mode = currentConnectionMode;
+            const httpPort = document.getElementById('httpPort').value || '8088';
+            const connectionMode = document.getElementById('connectionMode').value;
             
-            switch (mode) {
-                case 'websocket':
-                    connectWS();
-                    break;
-                case 'http':
-                    connectHTTP();
-                    break;
-                case 'reverse_ws':
-                    startReverseWS();
-                    break;
-                default:
-                    addMessage('未知的连接方式', 'system');
-            }
-        }
-
-        // 断开连接
-        function disconnect() {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.close();
-            }
-            
-            connectionStatus.textContent = '未连接';
-            connectionStatus.className = 'status status-disconnected';
-            connectBtn.style.display = 'block';
-            disconnectBtn.style.display = 'none';
-            
-            if (currentConnectionMode === 'reverse_ws') {
-                reverseWsStatus.textContent = '已断开';
-            }
-            
-            addMessage('连接已断开', 'system');
-            
-            // 更新群组状态
-            botStatus.className = 'status status-disconnected';
-            botStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> WebSocket未连接';
-        }
-
-        // HTTP API 连接
-        function connectHTTP() {
-            const url = httpUrlInput.value.trim();
-            if (!url) {
-                addMessage('请输入有效的HTTP API地址', 'system');
-                return;
-            }
-
-            // 保存到本地存储
-            localStorage.setItem('httpUrl', url);
-            if (httpTokenInput.value) {
-                localStorage.setItem('httpToken', httpTokenInput.value);
-            }
-
-            // 测试连接
-            fetch(`${url}/get_status`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': httpTokenInput.value ? `Bearer ${httpTokenInput.value}` : ''
-                }
-            })
-            .then(response => {
-                if (response.ok) {
-                    connectionStatus.textContent = '已连接';
-                    connectionStatus.className = 'status status-connected';
-                    connectBtn.style.display = 'none';
-                    disconnectBtn.style.display = 'block';
-                    addMessage('已连接到HTTP API服务器', 'system');
-                } else {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-            })
-            .catch(error => {
-                connectionStatus.textContent = '连接错误';
-                connectionStatus.className = 'status status-disconnected';
-                addMessage('HTTP API连接错误: ' + error, 'system');
-            });
-        }
-
-        // 启动反向WebSocket
-        function startReverseWS() {
-            const port = reverseWsPortInput.value.trim();
-            if (!port) {
-                addMessage('请输入有效的端口号', 'system');
-                return;
-            }
-
-            // 保存到本地存储
-            localStorage.setItem('reverseWsPort', port);
-
-            // 这里应该启动反向WebSocket服务器
-            // 在实际实现中，这会通过WebSocket连接到后端
-            reverseWsStatus.textContent = '正在监听...';
-            connectionStatus.textContent = '已连接';
-            connectionStatus.className = 'status status-connected';
-            connectBtn.style.display = 'none';
-            disconnectBtn.style.display = 'block';
-            addMessage(`反向WebSocket服务器已启动，端口: ${port}`, 'system');
-        }
-
-        // 发送命令（更新版）
-        function sendCommand() {
-            const command = input.value.trim();
-            if (!command) return;
-
-            addMessage(command, 'command');
-            input.value = '';
-
-            const sendToQQ = sendToQQCheckbox.checked;
-            
-            // Add animation to the button
-            document.querySelector('button').classList.add('pulse');
-            setTimeout(() => {
-                document.querySelector('button').classList.remove('pulse');
-            }, 500);
-            
-            if (sendToQQ) {
-                // 根据连接方式发送到QQ
-                switch (currentConnectionMode) {
-                    case 'websocket':
-                        if (ws && ws.readyState === WebSocket.OPEN) {
-                            ws.send(JSON.stringify({
-                                command: command,
-                                target: 'qq'
-                            }));
-                        } else {
-                            addMessage('WebSocket未连接，无法发送到QQ', 'system');
-                        }
-                        break;
-                    case 'http':
-                        // 通过HTTP API发送
-                        const httpUrl = httpUrlInput.value.trim();
-                        const token = httpTokenInput.value;
-                        
-                        fetch(`${httpUrl}/send_msg`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': token ? `Bearer ${token}` : ''
-                            },
-                            body: JSON.stringify({
-                                message_type: 'group',
-                                group_id: 123456, // 这里需要实际的群号
-                                message: command
-                            })
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status === 'ok') {
-                                addMessage('命令已通过HTTP API发送', 'system');
-                            } else {
-                                addMessage('HTTP API发送失败: ' + data.msg, 'system');
-                            }
-                        })
-                        .catch(error => {
-                            addMessage('HTTP API发送错误: ' + error, 'system');
-                        });
-                        break;
-                    case 'reverse_ws':
-                        // 通过反向WebSocket发送
-                        if (ws && ws.readyState === WebSocket.OPEN) {
-                            ws.send(JSON.stringify({
-                                command: command,
-                                target: 'qq'
-                            }));
-                        } else {
-                            addMessage('反向WebSocket未连接，无法发送到QQ', 'system');
-                        }
-                        break;
-                    default:
-                        addMessage('未知的连接方式', 'system');
-                }
-            } else {
-                // 本地处理
-                fetch('/command', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ command: command })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.response) {
-                        addMessage(data.response, 'result');
-                    }
-                })
-                .catch(error => {
-                    addMessage('本地处理失败: ' + error, 'system');
-                });
-            }
-        }
-
-        // 尝试自动连接
-        if (wsUrlInput.value) {
-            connectWS();
-        }
-
-        // 允许按Enter键发送消息
-        input.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                sendCommand();
-            }
-        });
-
-        // 格式化日志消息函数
-        function formatLogMessage(data) {
-            // 如果是字符串，直接返回
-            if (typeof data === 'string') {
-                return data;
-            }
-
-            // 处理不同类型的消息
-            switch (data.post_type) {
-                case 'message':
-                    return formatMessageEvent(data);
-                case 'notice':
-                    return formatNoticeEvent(data);
-                case 'request':
-                    return formatRequestEvent(data);
-                case 'meta_event':
-                    return formatMetaEvent(data);
-                default:
-                    // 如果不是标准OneBot事件，返回格式化的JSON
-                    return formatUnknownMessage(data);
-            }
-        }
-
-        // 格式化消息事件
-        function formatMessageEvent(data) {
-            const messageType = data.message_type || 'unknown';
-            const sender = data.sender || {};
-            const nickname = sender.nickname || sender.user_id || '未知用户';
-            const groupId = data.group_id;
-            const userId = data.user_id || sender.user_id;
-            
-            // 提取消息内容
-            let messageContent = '';
-            if (Array.isArray(data.message)) {
-                // 处理消息段数组
-                messageContent = data.message.map(segment => {
-                    switch (segment.type) {
-                        case 'text':
-                            return segment.data?.text || '';
-                        case 'at':
-                            const qq = segment.data?.qq;
-                            return qq ? `@${qq}` : '@某人';
-                        case 'face':
-                            const faceId = segment.data?.id;
-                            return faceId ? `[表情${faceId}]` : '[表情]';
-                        case 'image':
-                            return '[图片]';
-                        case 'record':
-                            return '[语音]';
-                        case 'video':
-                            return '[视频]';
-                        case 'file':
-                            return '[文件]';
-                        case 'location':
-                            return '[位置]';
-                        case 'share':
-                            return '[分享]';
-                        case 'reply':
-                            return '[回复]';
-                        case 'poke':
-                            return '[戳一戳]';
-                        default:
-                            return `[${segment.type}]`;
-                    }
-                }).join('');
-            } else if (typeof data.message === 'string') {
-                messageContent = data.message;
-            } else if (data.raw_message) {
-                messageContent = data.raw_message;
-            }
-
-            // 构建格式化消息
-            let formattedMessage = '';
-            
-            if (messageType === 'group') {
-                formattedMessage = `[群消息] ${nickname}: ${messageContent}`;
-                if (groupId) {
-                    formattedMessage += ` (群组: ${groupId})`;
-                }
-            } else if (messageType === 'private') {
-                formattedMessage = `[私聊] ${nickname}: ${messageContent}`;
-                if (userId) {
-                    formattedMessage += ` (用户: ${userId})`;
-                }
-            } else {
-                formattedMessage = `[${messageType}] ${nickname}: ${messageContent}`;
-            }
-
-            return formattedMessage;
-        }
-
-        // 格式化通知事件
-        function formatNoticeEvent(data) {
-            const noticeType = data.notice_type;
-            const userId = data.user_id;
-            const groupId = data.group_id;
-            const operatorId = data.operator_id;
-            const targetId = data.target_id;
-
-            switch (noticeType) {
-                case 'group_increase':
-                    return `[通知] 用户 ${userId} 加入了群 ${groupId}`;
-                case 'group_decrease':
-                    return `[通知] 用户 ${userId} 离开了群 ${groupId}`;
-                case 'group_ban':
-                    return `[通知] 用户 ${operatorId} 在群 ${groupId} 禁言了用户 ${userId}`;
-                case 'group_recall':
-                    return `[通知] 用户 ${operatorId} 在群 ${groupId} 撤回了消息`;
-                case 'friend_recall':
-                    return `[通知] 用户 ${userId} 撤回了消息`;
-                case 'poke':
-                    return `[通知] 用户 ${userId} 戳了戳用户 ${targetId}`;
-                case 'group_upload':
-                    return `[通知] 用户 ${userId} 在群 ${groupId} 上传了文件`;
-                case 'group_admin':
-                    return `[通知] 用户 ${userId} 在群 ${groupId} 的管理员状态变更`;
-                case 'friend_add':
-                    return `[通知] 添加了新的好友 ${userId}`;
-                default:
-                    return `[通知] ${noticeType} - 用户: ${userId}, 群组: ${groupId}`;
-            }
-        }
-
-        // 格式化请求事件
-        function formatRequestEvent(data) {
-            const requestType = data.request_type;
-            const userId = data.user_id;
-            const groupId = data.group_id;
-            const comment = data.comment || '';
-
-            switch (requestType) {
-                case 'friend':
-                    return `[请求] 用户 ${userId} 请求添加好友: ${comment}`;
-                case 'group':
-                    return `[请求] 用户 ${userId} 请求加入群 ${groupId}: ${comment}`;
-                default:
-                    return `[请求] ${requestType} - 用户: ${userId}, 群组: ${groupId}`;
-            }
-        }
-
-        // 格式化元事件
-        function formatMetaEvent(data) {
-            const metaEventType = data.meta_event_type;
-            
-            switch (metaEventType) {
-                case 'lifecycle':
-                    return `[元事件] 生命周期: ${data.sub_type}`;
-                case 'heartbeat':
-                    return `[元事件] 心跳 - 在线状态: ${data.status?.online ? '在线' : '离线'}`;
-                default:
-                    return `[元事件] ${metaEventType}`;
-            }
-        }
-
-        // 格式化未知消息
-        function formatUnknownMessage(data) {
-            try {
-                // 尝试美化JSON显示
-                return JSON.stringify(data, null, 2);
-            } catch (e) {
-                return String(data);
-            }
-        }
-
-        // 加载程序设置
-        function loadProgramSettings() {
-            fetch('/api/settings')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-                    return response.json();
-                })
-                .then(config => {
-                    // 填充设置表单
-                    document.getElementById('httpPort').value = config.HTTPPort || '';
-                    document.getElementById('programConnectionMode').value = config.ConnectionMode || 'websocket';
-                    document.getElementById('programWsUrl').value = config.WSURL || '';
-                    document.getElementById('programHttpUrl').value = config.HTTPURL || '';
-                    document.getElementById('programHttpToken').value = config.HTTPToken || '';
-                    document.getElementById('programReverseWsPort').value = config.ReverseWSPort || '';
-                    
-                    // 更新状态显示
-                    const statusElement = document.getElementById('programSettingsStatus');
-                    statusElement.textContent = '设置已从程序加载';
-                    statusElement.style.display = 'block';
-                    statusElement.style.color = 'var(--success)';
-                    
-                    setTimeout(() => {
-                        statusElement.style.display = 'none';
-                    }, 3000);
-                    
-                    addMessage('程序设置已加载', 'system');
-                })
-                .catch(error => {
-                    const statusElement = document.getElementById('programSettingsStatus');
-                    statusElement.textContent = '加载设置失败: ' + error.message;
-                    statusElement.style.display = 'block';
-                    statusElement.style.color = 'var(--danger)';
-                    
-                    setTimeout(() => {
-                        statusElement.style.display = 'none';
-                    }, 5000);
-                    
-                    addMessage('加载程序设置失败: ' + error.message, 'system');
-                });
-        }
-
-        // 保存程序设置
-        function saveProgramSettings() {
-            const config = {
-                HTTPPort: document.getElementById('httpPort').value.trim(),
-                ConnectionMode: document.getElementById('programConnectionMode').value,
-                WSURL: document.getElementById('programWsUrl').value.trim(),
-                HTTPURL: document.getElementById('programHttpUrl').value.trim(),
-                HTTPToken: document.getElementById('programHttpToken').value.trim(),
-                ReverseWSPort: document.getElementById('programReverseWsPort').value.trim()
+            let connectionData = {
+                httpPort: parseInt(httpPort),
+                connectionMode: connectionMode
             };
-
-            // 验证必填字段
-            if (!config.HTTPPort) {
-                alert('请输入HTTP端口');
-                return;
+            
+            // 根据连接模式添加相应的配置
+            if (connectionMode === 'websocket') {
+                const wsUrl = document.getElementById('wsUrl').value;
+                if (!wsUrl) {
+                    addMessage('system', '请输入WebSocket URL');
+                    return;
+                }
+                connectionData.qqWSURL = wsUrl;
+            } else if (connectionMode === 'http') {
+                const httpUrl = document.getElementById('httpUrl').value;
+                const httpToken = document.getElementById('httpToken').value;
+                if (!httpUrl) {
+                    addMessage('system', '请输入HTTP API URL');
+                    return;
+                }
+                connectionData.qqHTTPURL = httpUrl;
+                if (httpToken) {
+                    connectionData.qqAccessToken = httpToken;
+                }
+            } else if (connectionMode === 'reverse_ws') {
+                const reverseWsPort = document.getElementById('reverseWsPort').value;
+                if (!reverseWsPort) {
+                    addMessage('system', '请输入反向WebSocket端口');
+                    return;
+                }
+                connectionData.qqReverseWS = reverseWsPort;
             }
-
+            
+            // 保存设置到本地存储
+            localStorage.setItem('connectionSettings', JSON.stringify(connectionData));
+            
+            // 发送连接请求
             fetch('/api/settings', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(config)
+                body: JSON.stringify(connectionData)
             })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => {
-                        throw new Error(err.error || `HTTP ${response.status}`);
-                    });
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
-                const statusElement = document.getElementById('programSettingsStatus');
-                statusElement.textContent = '设置已保存到程序';
-                statusElement.style.display = 'block';
-                statusElement.style.color = 'var(--success)';
-                
-                setTimeout(() => {
-                    statusElement.style.display = 'none';
-                }, 3000);
-                
-                addMessage('程序设置已保存', 'system');
-                
-                // 如果HTTP端口发生变化，提示用户可能需要重新加载页面
-                const currentPort = window.location.port;
-                if (config.HTTPPort && config.HTTPPort !== currentPort) {
-                    addMessage(`注意：HTTP端口已更改为 ${config.HTTPPort}，可能需要重新加载页面`, 'system');
+                if (data.success) {
+                    addMessage('system', '连接设置已保存');
+                    updateConnectionStatus(true);
+                } else {
+                    addMessage('system', '连接设置保存失败: ' + data.error);
                 }
             })
             .catch(error => {
-                const statusElement = document.getElementById('programSettingsStatus');
-                statusElement.textContent = '保存设置失败: ' + error.message;
-                statusElement.style.display = 'block';
-                statusElement.style.color = 'var(--danger)';
-                
-                setTimeout(() => {
-                    statusElement.style.display = 'none';
-                }, 5000);
-                
-                addMessage('保存程序设置失败: ' + error.message, 'system');
+                addMessage('system', '连接失败: ' + error.message);
             });
         }
 
-        // 页面加载时自动加载程序设置
-        window.addEventListener('load', function() {
-            // 延迟加载设置，确保页面完全加载
-            setTimeout(loadProgramSettings, 1000);
-        });
+        // 断开连接
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+            updateConnectionStatus(false);
+            addMessage('system', '已断开连接');
+        }
+
+        // 更新连接状态
+        function updateConnectionStatus(connected) {
+            isConnected = connected;
+            const statusElement = document.getElementById('connectionStatus');
+            const connectBtn = document.getElementById('connectBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+            
+            if (connected) {
+                statusElement.className = 'status status-connected';
+                statusElement.innerHTML = '<i class="fas fa-check-circle"></i> 已连接';
+                connectBtn.style.display = 'none';
+                disconnectBtn.style.display = 'inline-block';
+            } else {
+                statusElement.className = 'status status-disconnected';
+                statusElement.innerHTML = '<i class="fas fa-exclamation-circle"></i> 未连接';
+                connectBtn.style.display = 'inline-block';
+                disconnectBtn.style.display = 'none';
+            }
+        }
+
+        // 保存管理员设置
+        function saveAdminSettings() {
+            const adminQQ = document.getElementById('adminQQ').value;
+            if (!adminQQ) {
+                addMessage('system', '请输入管理员QQ号');
+                return;
+            }
+            
+            // 保存到本地存储
+            localStorage.setItem('adminQQ', adminQQ);
+            addMessage('system', '管理员设置已保存');
+        }
+
+        // 刷新群组列表
+        function refreshGroups() {
+            // 这里应该从服务器获取群组列表
+            // 暂时使用模拟数据
+            const groupList = document.getElementById('groupList');
+            groupList.innerHTML = `
+                <div class="group-item">
+                    <div class="group-info">
+                        <strong>测试群组1</strong><br>
+                        <small>群号: 123456789</small>
+                    </div>
+                    <div class="group-actions">
+                        <button class="btn-warning btn-sm" onclick="toggleGroup(123456789)"><i class="fas fa-power-off"></i> 启用</button>
+                        <button class="btn-danger btn-sm" onclick="removeGroup(123456789)"><i class="fas fa-trash"></i> 删除</button>
+                    </div>
+                </div>
+            `;
+            addMessage('system', '群组列表已刷新');
+        }
+
+        // 切换群组状态
+        function toggleGroup(groupId) {
+            addMessage('system', `切换群组 ${groupId} 状态`);
+        }
+
+        // 删除群组
+        function removeGroup(groupId) {
+            if (confirm(`确定要删除群组 ${groupId} 吗？`)) {
+                addMessage('system', `已删除群组 ${groupId}`);
+            }
+        }
+
+        // 发送命令
+        function sendCommand() {
+            const commandInput = document.getElementById('commandInput');
+            const command = commandInput.value.trim();
+            
+            if (!command) {
+                return;
+            }
+            
+            addMessage('command', command);
+            commandInput.value = '';
+            
+            // 如果是本地处理，直接显示结果
+            if (!document.getElementById('sendToQQ').checked) {
+                // 模拟骰子结果
+                setTimeout(() => {
+                    const result = simulateDiceRoll(command);
+                    addMessage('result', result);
+                }, 500);
+            } else if (isConnected) {
+                // 发送到QQ机器人
+                // 这里应该通过WebSocket发送命令
+                addMessage('system', '命令已发送到QQ机器人');
+            } else {
+                addMessage('system', '未连接到QQ机器人，命令将在本地处理');
+                setTimeout(() => {
+                    const result = simulateDiceRoll(command);
+                    addMessage('result', result);
+                }, 500);
+            }
+        }
+
+        // 模拟骰子投掷
+        function simulateDiceRoll(command) {
+            if (command.startsWith('.r ')) {
+                const diceExpr = command.substring(3);
+                return `掷骰结果: ${diceExpr} = 15 (6 + 5 + 4)`;
+            } else if (command === '.coc') {
+                return 'COC角色生成: 力量65 体质70 体型55 敏捷60 外貌75 智力80 意志65 教育70 幸运50';
+            } else if (command === '.dnd') {
+                return 'DND角色生成: 力量14 敏捷16 体质12 智力18 感知15 魅力13';
+            } else if (command === '.help') {
+                return '可用命令: .r [骰子表达式] - 掷骰子, .coc - COC角色生成, .dnd - DND角色生成, .help - 显示帮助';
+            } else {
+                return `未知命令: ${command}`;
+            }
+        }
+
+        // 处理回车键
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendCommand();
+            }
+        }
+
+        // 添加消息到输出区域
+        function addMessage(type, content) {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            let icon = 'fa-terminal';
+            let headerText = '命令';
+            
+            if (type === 'result') {
+                icon = 'fa-dice';
+                headerText = '结果';
+            } else if (type === 'system') {
+                icon = 'fa-info-circle';
+                headerText = '系统';
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    <span class="timestamp">${timestamp}</span>
+                    <i class="fas ${icon} message-icon"></i>
+                    <span>${headerText}</span>
+                </div>
+                <div class="message-content">${content}</div>
+            `;
+            
+            output.appendChild(messageDiv);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        // 页面加载时初始化
+        window.onload = function() {
+            // 加载保存的设置
+            const savedSettings = localStorage.getItem('connectionSettings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                document.getElementById('httpPort').value = settings.httpPort || '';
+                document.getElementById('connectionMode').value = settings.connectionMode || 'websocket';
+                
+                if (settings.qqWSURL) document.getElementById('wsUrl').value = settings.qqWSURL;
+                if (settings.qqHTTPURL) document.getElementById('httpUrl').value = settings.qqHTTPURL;
+                if (settings.qqAccessToken) document.getElementById('httpToken').value = settings.qqAccessToken;
+                if (settings.qqReverseWS) document.getElementById('reverseWsPort').value = settings.qqReverseWS;
+                
+                // 触发连接方式改变以显示正确的设置
+                onConnectionModeChange();
+            }
+            
+            // 加载管理员设置
+            const adminQQ = localStorage.getItem('adminQQ');
+            if (adminQQ) {
+                document.getElementById('adminQQ').value = adminQQ;
+            }
+            
+            addMessage('system', '系统已就绪，请配置连接设置后开始使用');
+        };
     </script>
 </body>
 </html>

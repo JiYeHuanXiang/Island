@@ -32,17 +32,32 @@ type CommandResponse struct {
 func StartHTTPServer(appConfig *config.Config, handler *handlers.MessageHandler) {
 	msgHandler = handler
 	
-	// 自定义处理函数，处理根路径并提供UI.html
+	// 自定义处理函数，处理根路径并提供index.html
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		// 如果是根路径，提供UI.html
+		// 如果是根路径，提供index.html
 		if r.URL.Path == "/" || r.URL.Path == "/index.html" {
-			http.ServeFile(w, r, "web/UI.html")
+			http.ServeFile(w, r, "web/index.html")
 			return
 		}
 		
-		// 如果是UI.html路径，也提供服务
-		if r.URL.Path == "/UI.html" {
-			http.ServeFile(w, r, "web/UI.html")
+		// 如果是静态资源路径，提供对应的文件
+		if r.URL.Path == "/css/styles.css" {
+			http.ServeFile(w, r, "web/css/styles.css")
+			return
+		}
+		
+		if r.URL.Path == "/js/utils.js" {
+			http.ServeFile(w, r, "web/js/utils.js")
+			return
+		}
+		
+		if r.URL.Path == "/js/settings.js" {
+			http.ServeFile(w, r, "web/js/settings.js")
+			return
+		}
+		
+		if r.URL.Path == "/js/app.js" {
+			http.ServeFile(w, r, "web/js/app.js")
 			return
 		}
 		

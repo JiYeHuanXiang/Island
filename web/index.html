@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Island:dice - COC/DND</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-dice-d20 fa-sm"></i> Island:dice - COC/DND骰子机器人</h1>
+            <p>一个AI制作的COC(克苏鲁的呼唤)和DND(龙与地下城)TRPG骰子机器人</p>
+        </div>
+        
+        <!-- 统一的系统设置 -->
+        <div class="card">
+            <div class="card-title"><i class="fas fa-cog"></i> 系统设置</div>
+            <div class="tab-container">
+                <div class="tab active" onclick="switchTab('connection-settings')">连接设置</div>
+                <div class="tab" onclick="switchTab('admin-settings')">管理员设置</div>
+                <div class="tab" onclick="switchTab('group-management')">群组管理</div>
+            </div>
+            
+            <!-- 连接设置 -->
+            <div id="connection-settings" class="admin-settings active">
+                <!-- 基础设置 -->
+                <div class="settings-group">
+                    <div class="settings-label"><i class="fas fa-server"></i> HTTP端口:</div>
+                    <input type="text" id="httpPort" placeholder="8088">
+                </div>
+
+                <!-- 连接方式选择 -->
+                <div class="settings-group">
+                    <div class="settings-label"><i class="fas fa-cogs"></i> 连接方式:</div>
+                    <select id="connectionMode" onchange="onConnectionModeChange()">
+                        <option value="websocket">WebSocket</option>
+                        <option value="http">HTTP API</option>
+                        <option value="reverse_ws">反向WebSocket</option>
+                    </select>
+                </div>
+
+                <!-- WebSocket 设置 -->
+                <div id="websocketSettings" class="connection-settings">
+                    <div class="settings-group">
+                        <div class="settings-label"><i class="fas fa-network-wired"></i> WebSocket URL:</div>
+                        <input type="text" id="wsUrl" placeholder="ws://127.0.0.1:3009">
+                    </div>
+                </div>
+
+                <!-- HTTP API 设置 -->
+                <div id="httpSettings" class="connection-settings" style="display: none;">
+                    <div class="settings-group">
+                        <div class="settings-label"><i class="fas fa-server"></i> HTTP API URL:</div>
+                        <input type="text" id="httpUrl" placeholder="http://127.0.0.1:6700">
+                    </div>
+                    <div class="settings-group">
+                        <div class="settings-label"><i class="fas fa-key"></i> Access Token:</div>
+                        <input type="password" id="httpToken" placeholder="可选，如果配置了访问令牌">
+                    </div>
+                </div>
+
+                <!-- 反向WebSocket 设置 -->
+                <div id="reverseWsSettings" class="connection-settings" style="display: none;">
+                    <div class="settings-group">
+                        <div class="settings-label"><i class="fas fa-exchange-alt"></i> 反向WS端口:</div>
+                        <input type="text" id="reverseWsPort" placeholder="8088">
+                    </div>
+                </div>
+
+                <!-- 连接按钮 -->
+                <div class="settings-group">
+                    <div class="settings-label"></div>
+                    <button onclick="connect()" id="connectBtn"><i class="fas fa-link"></i> 连接</button>
+                    <button onclick="disconnect()" id="disconnectBtn" style="display: none;" class="btn-danger"><i class="fas fa-unlink"></i> 断开连接</button>
+                </div>
+
+                <div class="settings-group">
+                    <div class="settings-label"><i class="fas fa-paper-plane"></i> 发送目标:</div>
+                    <div class="switch-container">
+                        <label class="switch">
+                            <input type="checkbox" id="sendToQQ">
+                            <span class="slider"></span>
+                        </label>
+                        <span class="switch-label" id="targetLabel">本地处理</span>
+                    </div>
+                </div>
+
+                <!-- 连接状态 -->
+                <div id="connectionStatus" class="status status-disconnected">
+                    <i class="fas fa-exclamation-circle"></i> 未连接
+                </div>
+            </div>
+
+            <!-- 管理员设置 -->
+            <div id="admin-settings" class="admin-settings">
+                <div class="settings-group">
+                    <div class="settings-label"><i class="fas fa-user-shield"></i> 管理员QQ号:</div>
+                    <input type="text" id="adminQQ" placeholder="输入管理员QQ号">
+                </div>
+                <div class="settings-group">
+                    <div class="settings-label"></div>
+                    <button onclick="saveAdminSettings()"><i class="fas fa-save"></i> 保存管理员设置</button>
+                </div>
+            </div>
+
+            <!-- 群组管理 -->
+            <div id="group-management" class="admin-settings">
+                <div class="settings-group">
+                    <div class="settings-label"><i class="fas fa-users"></i> 群组列表:</div>
+                    <button onclick="refreshGroups()"><i class="fas fa-sync-alt"></i> 刷新群组</button>
+                </div>
+                <div id="groupList" class="group-list">
+                    <!-- 群组列表将在这里动态生成 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 命令输入区域 -->
+        <div class="card">
+            <div class="card-title"><i class="fas fa-terminal"></i> 命令输入</div>
+            <div class="input-group">
+                <input type="text" id="commandInput" placeholder="输入骰子命令，例如: .r 3d6" onkeypress="handleKeyPress(event)">
+                <button onclick="sendCommand()"><i class="fas fa-paper-plane"></i> 发送</button>
+            </div>
+        </div>
+
+        <!-- 输出区域 -->
+        <div class="card">
+            <div class="card-title"><i class="fas fa-scroll"></i> 输出日志</div>
+            <div id="output"></div>
+        </div>
+
+        <!-- 帮助信息 -->
+        <div class="card">
+            <div class="card-title"><i class="fas fa-question-circle"></i> 帮助信息</div>
+            <div class="help-content">
+                <p><strong>常用命令:</strong></p>
+                <ul>
+                    <li><strong>.r</strong> - 掷骰子 (例如: .r 3d6)</li>
+                    <li><strong>.coc</strong> - COC角色生成</li>
+                    <li><strong>.dnd</strong> - DND角色生成</li>
+                    <li><strong>.help</strong> - 显示帮助信息</li>
+                </ul>
+                <p><strong>连接方式说明:</strong></p>
+                <ul>
+                    <li><strong>WebSocket</strong> - 直接连接到QQ机器人的WebSocket服务</li>
+                    <li><strong>HTTP API</strong> - 通过HTTP API与QQ机器人通信</li>
+                    <li><strong>反向WebSocket</strong> - QQ机器人连接到本程序</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
