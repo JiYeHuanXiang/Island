@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Island:dice - COC</title>
+    <title>Island:dice - COC/DND</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -455,8 +455,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1><i class="fas fa-dice-d20 fa-sm"></i> Island:dice - COC骰子机器人</h1>
-            <p>一个AI制作的COC(克苏鲁的呼唤)TRPG骰子机器人</p>
+            <h1><i class="fas fa-dice-d20 fa-sm"></i> Island:dice - COC/DND骰子机器人</h1>
+            <p>一个AI制作的COC(克苏鲁的呼唤)和DND(龙与地下城)TRPG骰子机器人</p>
         </div>
         
         <div class="card">
@@ -523,6 +523,11 @@
                     <li><strong>.ra 70</strong> - 进行技能值为70的检定</li>
                     <li><strong>.r 3d6</strong> - 投掷3个6面骰</li>
                     <li><strong>.sc 1/1d6</strong> - 理智检定</li>
+                    <li><strong>.dnd</strong> - 生成DND角色属性</li>
+                    <li><strong>.r 1d20</strong> - 进行d20检定（用于攻击、技能检定等）</li>
+                    <li><strong>.r 2d6+3</strong> - 投掷2个6面骰并加3（用于伤害计算）</li>
+                    <li><strong>.save str</strong> - 进行力量豁免检定</li>
+                    <li><strong>.skill stealth</strong> - 进行潜行技能检定</li>
                 </ul>
                 <p>连接WebSocket后，可以切换"发送目标"将指令发送到QQ群</p>
                 <div class="command-example">.help</div>
