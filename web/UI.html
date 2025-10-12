@@ -826,24 +826,25 @@
                 addMessage('WebSocket连接错误: ' + error, 'system');
             };
             
-            ws.onmessage = function(event) {
-                try {
-                    const data = JSON.parse(event.data);
-                    
-                    if (data.type === 'group' && data.action === 'list') {
-                        updateGroupList(data.groups);
-                    } else if (data.type === 'group' && (data.action === 'leave' || data.action === 'disable')) {
-                        addMessage(`群组操作成功: ${data.message}`, 'system');
-                        refreshGroups(); // 刷新群组列表
-                    } else {
-                        // 普通消息
-                        addMessage(event.data, 'result');
-                    }
-                } catch (e) {
-                    // 不是JSON数据，直接显示
-                    addMessage(event.data, 'result');
+        ws.onmessage = function(event) {
+            try {
+                const data = JSON.parse(event.data);
+                
+                if (data.type === 'group' && data.action === 'list') {
+                    updateGroupList(data.groups);
+                } else if (data.type === 'group' && (data.action === 'leave' || data.action === 'disable')) {
+                    addMessage(`群组操作成功: ${data.message}`, 'system');
+                    refreshGroups(); // 刷新群组列表
+                } else {
+                    // 普通消息，先格式化再显示
+                    const formattedMessage = formatLogMessage(data);
+                    addMessage(formattedMessage, 'result');
                 }
-            };
+            } catch (e) {
+                // 不是JSON数据，直接显示
+                addMessage(event.data, 'result');
+            }
+        };
         }
 
         function sendCommand() {
@@ -1132,6 +1133,170 @@
                 sendCommand();
             }
         });
+
+        // 格式化日志消息函数
+        function formatLogMessage(data) {
+            // 如果是字符串，直接返回
+            if (typeof data === 'string') {
+                return data;
+            }
+
+            // 处理不同类型的消息
+            switch (data.post_type) {
+                case 'message':
+                    return formatMessageEvent(data);
+                case 'notice':
+                    return formatNoticeEvent(data);
+                case 'request':
+                    return formatRequestEvent(data);
+                case 'meta_event':
+                    return formatMetaEvent(data);
+                default:
+                    // 如果不是标准OneBot事件，返回格式化的JSON
+                    return formatUnknownMessage(data);
+            }
+        }
+
+        // 格式化消息事件
+        function formatMessageEvent(data) {
+            const messageType = data.message_type || 'unknown';
+            const sender = data.sender || {};
+            const nickname = sender.nickname || sender.user_id || '未知用户';
+            const groupId = data.group_id;
+            const userId = data.user_id || sender.user_id;
+            
+            // 提取消息内容
+            let messageContent = '';
+            if (Array.isArray(data.message)) {
+                // 处理消息段数组
+                messageContent = data.message.map(segment => {
+                    switch (segment.type) {
+                        case 'text':
+                            return segment.data?.text || '';
+                        case 'at':
+                            const qq = segment.data?.qq;
+                            return qq ? `@${qq}` : '@某人';
+                        case 'face':
+                            const faceId = segment.data?.id;
+                            return faceId ? `[表情${faceId}]` : '[表情]';
+                        case 'image':
+                            return '[图片]';
+                        case 'record':
+                            return '[语音]';
+                        case 'video':
+                            return '[视频]';
+                        case 'file':
+                            return '[文件]';
+                        case 'location':
+                            return '[位置]';
+                        case 'share':
+                            return '[分享]';
+                        case 'reply':
+                            return '[回复]';
+                        case 'poke':
+                            return '[戳一戳]';
+                        default:
+                            return `[${segment.type}]`;
+                    }
+                }).join('');
+            } else if (typeof data.message === 'string') {
+                messageContent = data.message;
+            } else if (data.raw_message) {
+                messageContent = data.raw_message;
+            }
+
+            // 构建格式化消息
+            let formattedMessage = '';
+            
+            if (messageType === 'group') {
+                formattedMessage = `[群消息] ${nickname}: ${messageContent}`;
+                if (groupId) {
+                    formattedMessage += ` (群组: ${groupId})`;
+                }
+            } else if (messageType === 'private') {
+                formattedMessage = `[私聊] ${nickname}: ${messageContent}`;
+                if (userId) {
+                    formattedMessage += ` (用户: ${userId})`;
+                }
+            } else {
+                formattedMessage = `[${messageType}] ${nickname}: ${messageContent}`;
+            }
+
+            return formattedMessage;
+        }
+
+        // 格式化通知事件
+        function formatNoticeEvent(data) {
+            const noticeType = data.notice_type;
+            const userId = data.user_id;
+            const groupId = data.group_id;
+            const operatorId = data.operator_id;
+            const targetId = data.target_id;
+
+            switch (noticeType) {
+                case 'group_increase':
+                    return `[通知] 用户 ${userId} 加入了群 ${groupId}`;
+                case 'group_decrease':
+                    return `[通知] 用户 ${userId} 离开了群 ${groupId}`;
+                case 'group_ban':
+                    return `[通知] 用户 ${operatorId} 在群 ${groupId} 禁言了用户 ${userId}`;
+                case 'group_recall':
+                    return `[通知] 用户 ${operatorId} 在群 ${groupId} 撤回了消息`;
+                case 'friend_recall':
+                    return `[通知] 用户 ${userId} 撤回了消息`;
+                case 'poke':
+                    return `[通知] 用户 ${userId} 戳了戳用户 ${targetId}`;
+                case 'group_upload':
+                    return `[通知] 用户 ${userId} 在群 ${groupId} 上传了文件`;
+                case 'group_admin':
+                    return `[通知] 用户 ${userId} 在群 ${groupId} 的管理员状态变更`;
+                case 'friend_add':
+                    return `[通知] 添加了新的好友 ${userId}`;
+                default:
+                    return `[通知] ${noticeType} - 用户: ${userId}, 群组: ${groupId}`;
+            }
+        }
+
+        // 格式化请求事件
+        function formatRequestEvent(data) {
+            const requestType = data.request_type;
+            const userId = data.user_id;
+            const groupId = data.group_id;
+            const comment = data.comment || '';
+
+            switch (requestType) {
+                case 'friend':
+                    return `[请求] 用户 ${userId} 请求添加好友: ${comment}`;
+                case 'group':
+                    return `[请求] 用户 ${userId} 请求加入群 ${groupId}: ${comment}`;
+                default:
+                    return `[请求] ${requestType} - 用户: ${userId}, 群组: ${groupId}`;
+            }
+        }
+
+        // 格式化元事件
+        function formatMetaEvent(data) {
+            const metaEventType = data.meta_event_type;
+            
+            switch (metaEventType) {
+                case 'lifecycle':
+                    return `[元事件] 生命周期: ${data.sub_type}`;
+                case 'heartbeat':
+                    return `[元事件] 心跳 - 在线状态: ${data.status?.online ? '在线' : '离线'}`;
+                default:
+                    return `[元事件] ${metaEventType}`;
+            }
+        }
+
+        // 格式化未知消息
+        function formatUnknownMessage(data) {
+            try {
+                // 尝试美化JSON显示
+                return JSON.stringify(data, null, 2);
+            } catch (e) {
+                return String(data);
+            }
+        }
     </script>
 </body>
 </html>
