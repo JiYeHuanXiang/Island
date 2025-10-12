@@ -228,6 +228,7 @@ island/
 
 如有问题，请通过以下方式联系：
 - GitHub Issues: [项目Issues页面](https://github.com/JiYeHuanXiang/island/issues)
+- QQgroup：684311770
 
 ---
 

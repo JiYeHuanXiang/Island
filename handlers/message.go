@@ -247,6 +247,29 @@ func (h *MessageHandler) HandleDisableGroup(conn *websocket.Conn, msgData map[st
 	h.sendGroupOperationResponse(conn, "disable", fmt.Sprintf("已切换群组 %s 的骰子功能状态", groupID))
 }
 
+// GetCurrentConfig 获取当前配置
+func (h *MessageHandler) GetCurrentConfig() *config.Config {
+	return h.config
+}
+
+// UpdateConfig 更新配置
+func (h *MessageHandler) UpdateConfig(newConfig *config.Config) error {
+	// 保存配置到文件
+	if err := config.SaveConfig(newConfig); err != nil {
+		return fmt.Errorf("保存配置失败: %v", err)
+	}
+
+	// 更新当前配置
+	*h.config = *newConfig
+
+	// 重新初始化连接管理器
+	if err := h.connManager.Reinitialize(newConfig); err != nil {
+		return fmt.Errorf("重新初始化连接失败: %v", err)
+	}
+
+	return nil
+}
+
 // 辅助方法
 func parseIncomingMessage(data []byte) (*OneBotMessage, error) {
 	var msg OneBotMessage

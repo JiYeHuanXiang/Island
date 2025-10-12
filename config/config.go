@@ -11,8 +11,8 @@ import (
 // Config 应用配置
 type Config struct {
 	HTTPPort      string  `env:"HTTP_PORT" envDefault:"8088"`
-	QQWSURL       string  `env:"QQ_WS_URL" envDefault:"ws://127.0.0.1:3009"`
-	QQHTTPURL     string  `env:"QQ_HTTP_URL" envDefault:"http://127.0.0.1:6700"`
+	QQWSURL       string  `env:"QQ_WS_URL" envDefault:"ws://127.0.0.1:6700"`
+	QQHTTPURL     string  `env:"QQ_HTTP_URL" envDefault:""`
 	QQReverseWS   string  `env:"QQ_REVERSE_WS" envDefault:""`
 	QQAccessToken string  `env:"QQ_ACCESS_TOKEN" envDefault:""`
 	QQGroupID     []int64 `env:"QQ_GROUP_ID" envSeparator:","`
@@ -52,8 +52,29 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-// LoadConfig 加载配置
+// LoadConfig 加载配置（支持文件和环境变量）
 func LoadConfig() (*Config, error) {
+	storage := NewConfigStorage()
+
+	// 优先从文件加载配置
+	if storage.FileExists() {
+		fileCfg, err := storage.LoadFromFile()
+		if err != nil {
+			log.Printf("从文件加载配置失败: %v，回退到环境变量", err)
+		} else {
+			// 合并环境变量配置（环境变量优先级更高）
+			mergedCfg := storage.MergeWithEnv(fileCfg)
+			
+			if len(mergedCfg.QQGroupID) == 0 {
+				log.Println("未配置QQ_GROUP_ID，将处理所有群组消息")
+			}
+
+			log.Printf("配置加载成功 - 连接模式: %s (来自文件和环境变量)", mergedCfg.ConnectionMode)
+			return mergedCfg, nil
+		}
+	}
+
+	// 回退到环境变量配置
 	var cfg Config
 	if err := env.Parse(&cfg); err != nil {
 		return nil, fmt.Errorf("配置加载失败: %w", err)
@@ -73,6 +94,17 @@ func LoadConfig() (*Config, error) {
 		log.Println("未配置QQ_GROUP_ID，将处理所有群组消息")
 	}
 
-	log.Printf("配置加载成功 - 连接模式: %s", cfg.ConnectionMode)
+	log.Printf("配置加载成功 - 连接模式: %s (来自环境变量)", cfg.ConnectionMode)
 	return &cfg, nil
+}
+
+// SaveConfig 保存配置到文件
+func SaveConfig(cfg *Config) error {
+	storage := NewConfigStorage()
+	return storage.SaveToFile(cfg)
+}
+
+// GetConfigStorage 获取配置存储实例
+func GetConfigStorage() *ConfigStorage {
+	return NewConfigStorage()
 }

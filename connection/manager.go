@@ -451,6 +451,38 @@ func (cm *ConnectionManager) leaveReverseWebSocketGroup(groupID int64) error {
 	return cm.reverseWS.SendMessage(request)
 }
 
+// Reinitialize 重新初始化连接管理器
+func (cm *ConnectionManager) Reinitialize(newConfig *config.Config) error {
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
+
+	// 关闭当前连接
+	close(cm.quit)
+	
+	if cm.wsConn != nil {
+		cm.wsConn.Close()
+		cm.wsConn = nil
+	}
+
+	if cm.httpClient != nil {
+		cm.httpClient = nil
+	}
+
+	if cm.reverseWS != nil {
+		cm.reverseWS.Close()
+		cm.reverseWS = nil
+	}
+
+	// 更新配置
+	cm.config = newConfig
+	cm.mode = newConfig.ConnectionMode
+	cm.retries = 0
+	cm.quit = make(chan struct{})
+
+	// 重新建立连接
+	return cm.Connect()
+}
+
 // Close 关闭连接
 func (cm *ConnectionManager) Close() {
 	cm.mu.Lock()

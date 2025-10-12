@@ -112,6 +112,41 @@
             line-height: 1.4;
             animation: fadeIn 0.4s ease;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .message::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: currentColor;
+            opacity: 0.3;
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .message-content {
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .message-icon {
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         @keyframes fadeIn {
@@ -508,7 +543,7 @@
             <div class="settings-group">
                 <div class="settings-label"></div>
                 <button onclick="connect()" id="connectBtn"><i class="fas fa-link"></i> 连接</button>
-                <button onclick="disconnect()" id="disconnectBtn" style="display: none;"><i class="fas fa-unlink"></i> 断开</button>
+                <button onclick="disconnect()" id="disconnectBtn" style="display: none;" class="btn-danger"><i class="fas fa-unlink"></i> 断开连接</button>
             </div>
 
             <div class="settings-group">
@@ -527,13 +562,53 @@
         </div>
 
         <div class="card">
-            <div class="card-title"><i class="fas fa-cog"></i> 管理员设置</div>
+            <div class="card-title"><i class="fas fa-cog"></i> 程序设置</div>
             <div class="tab-container">
-                <div class="tab active" onclick="switchTab('admin-settings')">管理员QQ</div>
+                <div class="tab active" onclick="switchTab('program-settings')">程序配置</div>
+                <div class="tab" onclick="switchTab('admin-settings')">管理员QQ</div>
                 <div class="tab" onclick="switchTab('group-management')">群组管理</div>
             </div>
             
-            <div id="admin-settings" class="admin-settings active">
+            <div id="program-settings" class="admin-settings active">
+                <div class="settings-group">
+                    <div class="settings-label"><i class="fas fa-server"></i> HTTP端口:</div>
+                    <input type="text" id="httpPort" placeholder="8080">
+                </div>
+                <div class="settings-group">
+                    <div class="settings-label"><i class="fas fa-plug"></i> 连接模式:</div>
+                    <select id="programConnectionMode">
+                        <option value="websocket">WebSocket</option>
+                        <option value="http">HTTP API</option>
+                        <option value="reverse_ws">反向WebSocket</option>
+                    </select>
+                </div>
+                <div class="settings-group">
+                    <div class="settings-label"><i class="fas fa-network-wired"></i> WebSocket URL:</div>
+                    <input type="text" id="programWsUrl" placeholder="ws://127.0.0.1:3009">
+                </div>
+                <div class="settings-group">
+                    <div class="settings-label"><i class="fas fa-server"></i> HTTP API URL:</div>
+                    <input type="text" id="programHttpUrl" placeholder="http://127.0.0.1:6700">
+                </div>
+                <div class="settings-group">
+                    <div class="settings-label"><i class="fas fa-key"></i> Access Token:</div>
+                    <input type="password" id="programHttpToken" placeholder="可选，如果配置了访问令牌">
+                </div>
+                <div class="settings-group">
+                    <div class="settings-label"><i class="fas fa-exchange-alt"></i> 反向WS端口:</div>
+                    <input type="text" id="programReverseWsPort" placeholder="8088">
+                </div>
+                <div class="settings-group">
+                    <div class="settings-label"></div>
+                    <button onclick="loadProgramSettings()"><i class="fas fa-download"></i> 加载当前设置</button>
+                    <button onclick="saveProgramSettings()"><i class="fas fa-save"></i> 保存设置到程序</button>
+                </div>
+                <div id="programSettingsStatus" class="status" style="display: none;">
+                    <i class="fas fa-check-circle"></i> 设置已保存
+                </div>
+            </div>
+            
+            <div id="admin-settings" class="admin-settings">
                 <div class="settings-group">
                     <div class="settings-label"><i class="fas fa-user-shield"></i> 管理员QQ:</div>
                     <input type="text" id="adminQQ" placeholder="输入管理员QQ号">
@@ -967,6 +1042,10 @@
             }
             
             addMessage('连接已断开', 'system');
+            
+            // 更新群组状态
+            botStatus.className = 'status status-disconnected';
+            botStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> WebSocket未连接';
         }
 
         // HTTP API 连接
@@ -1297,6 +1376,120 @@
                 return String(data);
             }
         }
+
+        // 加载程序设置
+        function loadProgramSettings() {
+            fetch('/api/settings')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(config => {
+                    // 填充设置表单
+                    document.getElementById('httpPort').value = config.HTTPPort || '';
+                    document.getElementById('programConnectionMode').value = config.ConnectionMode || 'websocket';
+                    document.getElementById('programWsUrl').value = config.WSURL || '';
+                    document.getElementById('programHttpUrl').value = config.HTTPURL || '';
+                    document.getElementById('programHttpToken').value = config.HTTPToken || '';
+                    document.getElementById('programReverseWsPort').value = config.ReverseWSPort || '';
+                    
+                    // 更新状态显示
+                    const statusElement = document.getElementById('programSettingsStatus');
+                    statusElement.textContent = '设置已从程序加载';
+                    statusElement.style.display = 'block';
+                    statusElement.style.color = 'var(--success)';
+                    
+                    setTimeout(() => {
+                        statusElement.style.display = 'none';
+                    }, 3000);
+                    
+                    addMessage('程序设置已加载', 'system');
+                })
+                .catch(error => {
+                    const statusElement = document.getElementById('programSettingsStatus');
+                    statusElement.textContent = '加载设置失败: ' + error.message;
+                    statusElement.style.display = 'block';
+                    statusElement.style.color = 'var(--danger)';
+                    
+                    setTimeout(() => {
+                        statusElement.style.display = 'none';
+                    }, 5000);
+                    
+                    addMessage('加载程序设置失败: ' + error.message, 'system');
+                });
+        }
+
+        // 保存程序设置
+        function saveProgramSettings() {
+            const config = {
+                HTTPPort: document.getElementById('httpPort').value.trim(),
+                ConnectionMode: document.getElementById('programConnectionMode').value,
+                WSURL: document.getElementById('programWsUrl').value.trim(),
+                HTTPURL: document.getElementById('programHttpUrl').value.trim(),
+                HTTPToken: document.getElementById('programHttpToken').value.trim(),
+                ReverseWSPort: document.getElementById('programReverseWsPort').value.trim()
+            };
+
+            // 验证必填字段
+            if (!config.HTTPPort) {
+                alert('请输入HTTP端口');
+                return;
+            }
+
+            fetch('/api/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(config)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || `HTTP ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                const statusElement = document.getElementById('programSettingsStatus');
+                statusElement.textContent = '设置已保存到程序';
+                statusElement.style.display = 'block';
+                statusElement.style.color = 'var(--success)';
+                
+                setTimeout(() => {
+                    statusElement.style.display = 'none';
+                }, 3000);
+                
+                addMessage('程序设置已保存', 'system');
+                
+                // 如果HTTP端口发生变化，提示用户可能需要重新加载页面
+                const currentPort = window.location.port;
+                if (config.HTTPPort && config.HTTPPort !== currentPort) {
+                    addMessage(`注意：HTTP端口已更改为 ${config.HTTPPort}，可能需要重新加载页面`, 'system');
+                }
+            })
+            .catch(error => {
+                const statusElement = document.getElementById('programSettingsStatus');
+                statusElement.textContent = '保存设置失败: ' + error.message;
+                statusElement.style.display = 'block';
+                statusElement.style.color = 'var(--danger)';
+                
+                setTimeout(() => {
+                    statusElement.style.display = 'none';
+                }, 5000);
+                
+                addMessage('保存程序设置失败: ' + error.message, 'system');
+            });
+        }
+
+        // 页面加载时自动加载程序设置
+        window.addEventListener('load', function() {
+            // 延迟加载设置，确保页面完全加载
+            setTimeout(loadProgramSettings, 1000);
+        });
     </script>
 </body>
 </html>

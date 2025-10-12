@@ -36,6 +36,7 @@ func StartHTTPServer(appConfig *config.Config, handler *handlers.MessageHandler)
 	http.HandleFunc("/", serveStatic)
 	http.HandleFunc("/ws", handleWebSocket)
 	http.HandleFunc("/command", handleCommand)
+	http.HandleFunc("/api/settings", handleSettings)
 	log.Printf("Web服务器已启动 :%s", appConfig.HTTPPort)
 	if err := http.ListenAndServe(":"+appConfig.HTTPPort, nil); err != nil {
 		log.Fatalf("HTTP服务器错误: %v", err)
@@ -203,6 +204,66 @@ func handleUpdateAdmin(conn *websocket.Conn, msgData map[string]interface{}) {
 
 	log.Printf("管理员QQ已更新: %s", qq)
 	// 这里可以保存管理员QQ到配置文件或数据库
+}
+
+// 处理设置同步
+func handleSettings(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	switch r.Method {
+	case "GET":
+		// 获取当前配置
+		if msgHandler == nil {
+			http.Error(w, `{"error": "消息处理器未初始化"}`, http.StatusInternalServerError)
+			return
+		}
+
+		// 从消息处理器获取当前配置
+		currentConfig := msgHandler.GetCurrentConfig()
+		if currentConfig == nil {
+			http.Error(w, `{"error": "无法获取当前配置"}`, http.StatusInternalServerError)
+			return
+		}
+
+		if err := json.NewEncoder(w).Encode(currentConfig); err != nil {
+			log.Printf("序列化配置失败: %v", err)
+			http.Error(w, `{"error": "序列化配置失败"}`, http.StatusInternalServerError)
+		}
+
+	case "POST":
+		// 更新配置
+		if msgHandler == nil {
+			http.Error(w, `{"error": "消息处理器未初始化"}`, http.StatusInternalServerError)
+			return
+		}
+
+		var newConfig config.Config
+		if err := json.NewDecoder(r.Body).Decode(&newConfig); err != nil {
+			http.Error(w, `{"error": "解析配置失败"}`, http.StatusBadRequest)
+			return
+		}
+
+		// 验证配置
+		if err := newConfig.Validate(); err != nil {
+			http.Error(w, `{"error": "配置验证失败: `+err.Error()+`"}`, http.StatusBadRequest)
+			return
+		}
+
+		// 更新配置
+		if err := msgHandler.UpdateConfig(&newConfig); err != nil {
+			http.Error(w, `{"error": "更新配置失败: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+
+		// 广播配置更新到所有WebSocket客户端
+		BroadcastToWeb(`{"type": "config_updated", "message": "配置已更新"}`)
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{"message": "配置更新成功"})
+
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
 }
 
 // 广播消息到所有Web客户端
