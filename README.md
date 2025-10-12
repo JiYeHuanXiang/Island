@@ -218,8 +218,8 @@ island/
 ### 开发团队
 | 角色 | 贡献者 |
 |------|--------|
-| **主要开发者** | deepseekV3 |
-| **辅助开发者** | deepseekR1, BegoniaHe, dreamtel(jiyehuanxiang) |
+| **主要开发者** | deepseekV3.2 |
+| **辅助开发者** | BegoniaHe, dreamtel(jiyehuanxiang) |
 | **校验** | copilot（GPT-4o）, claude 3.7 thinking |
 
 ---
@@ -228,7 +228,6 @@ island/
 
 如有问题，请通过以下方式联系：
 - GitHub Issues: [项目Issues页面](https://github.com/JiYeHuanXiang/island/issues)
-- 邮箱: [项目维护者邮箱]
 
 ---
 
