@@ -6,8 +6,6 @@ import (
 	"island/handlers"
 	"log"
 	"net/http"
-	"path/filepath"
-	"strings"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -33,7 +31,25 @@ type CommandResponse struct {
 
 func StartHTTPServer(appConfig *config.Config, handler *handlers.MessageHandler) {
 	msgHandler = handler
-	http.HandleFunc("/", serveStatic)
+	
+	// 自定义处理函数，处理根路径并提供UI.html
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// 如果是根路径，提供UI.html
+		if r.URL.Path == "/" || r.URL.Path == "/index.html" {
+			http.ServeFile(w, r, "web/UI.html")
+			return
+		}
+		
+		// 如果是UI.html路径，也提供服务
+		if r.URL.Path == "/UI.html" {
+			http.ServeFile(w, r, "web/UI.html")
+			return
+		}
+		
+		// 其他路径返回404
+		http.NotFound(w, r)
+	})
+	
 	http.HandleFunc("/ws", handleWebSocket)
 	http.HandleFunc("/command", handleCommand)
 	http.HandleFunc("/api/settings", handleSettings)
@@ -41,19 +57,6 @@ func StartHTTPServer(appConfig *config.Config, handler *handlers.MessageHandler)
 	if err := http.ListenAndServe(":"+appConfig.HTTPPort, nil); err != nil {
 		log.Fatalf("HTTP服务器错误: %v", err)
 	}
-}
-
-func serveStatic(w http.ResponseWriter, r *http.Request) {
-	path := filepath.Clean(r.URL.Path)
-	if path == "/" || path == "/index.html" {
-		http.ServeFile(w, r, "web/UI.html")
-		return
-	}
-
-	if strings.HasPrefix(path, "/") {
-		path = filepath.Join("web", path)
-	}
-	http.ServeFile(w, r, path)
 }
 
 func handleCommand(w http.ResponseWriter, r *http.Request) {

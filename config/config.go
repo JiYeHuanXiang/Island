@@ -11,7 +11,7 @@ import (
 // Config 应用配置
 type Config struct {
 	HTTPPort      string  `env:"HTTP_PORT" envDefault:"8088"`
-	QQWSURL       string  `env:"QQ_WS_URL" envDefault:"ws://127.0.0.1:6700"`
+	QQWSURL       string  `env:"QQ_WS_URL" envDefault:""`
 	QQHTTPURL     string  `env:"QQ_HTTP_URL" envDefault:""`
 	QQReverseWS   string  `env:"QQ_REVERSE_WS" envDefault:""`
 	QQAccessToken string  `env:"QQ_ACCESS_TOKEN" envDefault:""`

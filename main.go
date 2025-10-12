@@ -5,6 +5,7 @@ import (
 	"island/connection"
 	"island/handlers"
 	"island/web"
+	"island/webview"
 	"log"
 	"math/rand"
 	"time"
@@ -43,6 +44,13 @@ func main() {
 
 	// 启动Web服务器
 	go web.StartHTTPServer(appConfig, msgHandler)
+
+	// 等待Web服务器启动
+	time.Sleep(2 * time.Second)
+
+	// 启动浏览器显示Web UI
+	log.Println("正在启动浏览器显示Web UI...")
+	go webview.OpenBrowserAsync(appConfig)
 
 	// 根据连接模式启动相应的消息循环
 	switch appConfig.ConnectionMode {
