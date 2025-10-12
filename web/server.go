@@ -2,6 +2,7 @@ package web
 
 import (
 	"encoding/json"
+	"fmt"
 	"island/config"
 	"island/handlers"
 	"log"
@@ -255,14 +256,60 @@ func handleSettings(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var newConfig config.Config
-		if err := json.NewDecoder(r.Body).Decode(&newConfig); err != nil {
+		// 使用map来解析前端发送的数据（字段名可能大小写不一致）
+		var settingsData map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&settingsData); err != nil {
 			http.Error(w, `{"error": "解析配置失败"}`, http.StatusBadRequest)
 			return
 		}
 
-		// 验证配置
-		if err := newConfig.Validate(); err != nil {
+		// 转换为Config结构体
+		newConfig := config.Config{}
+		
+		// 处理HTTP端口
+		if httpPort, ok := settingsData["httpPort"].(float64); ok {
+			newConfig.HTTPPort = fmt.Sprintf("%.0f", httpPort)
+		} else if httpPort, ok := settingsData["HTTPPort"].(string); ok {
+			newConfig.HTTPPort = httpPort
+		}
+		
+		// 处理连接模式
+		if connectionMode, ok := settingsData["connectionMode"].(string); ok {
+			newConfig.ConnectionMode = connectionMode
+		} else if connectionMode, ok := settingsData["ConnectionMode"].(string); ok {
+			newConfig.ConnectionMode = connectionMode
+		}
+		
+		// 处理WebSocket URL
+		if qqWSURL, ok := settingsData["qqWSURL"].(string); ok {
+			newConfig.QQWSURL = qqWSURL
+		} else if qqWSURL, ok := settingsData["QQWSURL"].(string); ok {
+			newConfig.QQWSURL = qqWSURL
+		}
+		
+		// 处理HTTP URL
+		if qqHTTPURL, ok := settingsData["qqHTTPURL"].(string); ok {
+			newConfig.QQHTTPURL = qqHTTPURL
+		} else if qqHTTPURL, ok := settingsData["QQHTTPURL"].(string); ok {
+			newConfig.QQHTTPURL = qqHTTPURL
+		}
+		
+		// 处理反向WebSocket端口
+		if qqReverseWS, ok := settingsData["qqReverseWS"].(string); ok {
+			newConfig.QQReverseWS = qqReverseWS
+		} else if qqReverseWS, ok := settingsData["QQReverseWS"].(string); ok {
+			newConfig.QQReverseWS = qqReverseWS
+		}
+		
+		// 处理访问令牌
+		if qqAccessToken, ok := settingsData["qqAccessToken"].(string); ok {
+			newConfig.QQAccessToken = qqAccessToken
+		} else if qqAccessToken, ok := settingsData["QQAccessToken"].(string); ok {
+			newConfig.QQAccessToken = qqAccessToken
+		}
+
+		// 验证配置（使用宽松验证）
+		if err := newConfig.ValidateForSave(); err != nil {
 			http.Error(w, `{"error": "配置验证失败: `+err.Error()+`"}`, http.StatusBadRequest)
 			return
 		}

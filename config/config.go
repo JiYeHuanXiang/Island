@@ -26,7 +26,7 @@ const (
 	ModeReverseWebSocket = "reverse_websocket"
 )
 
-// Validate 验证配置
+// Validate 验证配置（严格验证，用于运行时）
 func (c *Config) Validate() error {
 	if c.HTTPPort == "" {
 		return fmt.Errorf("HTTP_PORT 不能为空")
@@ -50,6 +50,22 @@ func (c *Config) Validate() error {
 	}
 
 	return nil
+}
+
+// ValidateForSave 验证配置（宽松验证，用于保存配置）
+func (c *Config) ValidateForSave() error {
+	if c.HTTPPort == "" {
+		return fmt.Errorf("HTTP端口不能为空")
+	}
+
+	// 只验证连接模式是否有效，不验证具体URL是否为空
+	switch c.ConnectionMode {
+	case ModeWebSocket, ModeHTTP, ModeReverseWebSocket:
+		// 允许URL为空，因为用户可能稍后配置
+		return nil
+	default:
+		return fmt.Errorf("不支持的连接模式: %s", c.ConnectionMode)
+	}
 }
 
 // LoadConfig 加载配置（支持文件和环境变量）
