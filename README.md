@@ -113,14 +113,22 @@ servers:
 
 ## 🌐 Web界面使用
 
-项目包含一个现代化的Web界面，可以通过浏览器访问：
+项目包含一个现代化的模块化Web界面，可以通过浏览器访问：
 
 1. 启动程序后，打开浏览器访问 `http://localhost:8088`
 2. 在Web界面中：
-   - 配置WebSocket连接
-   - 发送骰子指令
-   - 查看投掷结果
-   - 管理群组设置
+   - **系统设置**：统一的设置界面，包含连接设置、管理员设置、群组管理
+   - **连接管理**：支持WebSocket、HTTP API、反向WebSocket三种连接模式
+   - **骰子指令**：发送COC TRPG和DND 5e骰子指令
+   - **实时通信**：通过WebSocket与后端实时交互
+   - **主题切换**：支持深色/浅色主题切换
+   - **配置同步**：自动保存和加载界面设置
+
+### 前端架构
+- **模块化设计**：HTML、CSS、JavaScript分离为独立文件
+- **响应式布局**：适配不同屏幕尺寸
+- **现代技术**：使用CSS变量、ES6模块、localStorage等现代Web技术
+- **代码组织**：清晰的代码结构，便于维护和扩展
 
 ---
 
@@ -171,8 +179,23 @@ servers:
   - `lexer.go`: 词法分析器
   - `parser.go`: 语法分析器
   - `interface.go`: 解析器接口
-- **web/**: Web界面文件
-  - `UI.html`: 现代化Web界面
+- **web/**: 模块化Web界面
+  - `index.html`: 主HTML文件
+  - `server.go`: Web服务器
+  - `css/styles.css`: 样式文件
+  - `js/app.js`: 主应用逻辑
+  - `js/settings.js`: 设置管理
+  - `js/utils.js`: 工具函数
+- **config/**: 配置管理
+  - `config.go`: 配置结构定义
+  - `storage.go`: 配置存储
+- **connection/**: 连接管理
+  - `http.go`: HTTP连接处理
+  - `manager.go`: 连接管理器
+  - `reverse_ws.go`: 反向WebSocket
+  - `types.go`: 连接类型定义
+- **handlers/**: 消息处理器
+  - `message.go`: 消息处理逻辑
 
 ### 依赖库
 
@@ -193,8 +216,28 @@ island/
 │   ├── parser.go
 │   ├── interface.go
 │   └── ...
-└── web/
-    └── UI.html         # Web界面
+├── web/                # Web界面模块
+│   ├── index.html      # 主HTML文件
+│   ├── server.go       # Web服务器
+│   ├── css/
+│   │   └── styles.css  # 样式文件
+│   └── js/             # JavaScript模块
+│       ├── app.js      # 主应用逻辑
+│       ├── settings.js # 设置管理
+│       └── utils.js    # 工具函数
+├── config/             # 配置管理
+│   ├── config.go
+│   └── storage.go
+├── connection/         # 连接管理
+│   ├── http.go
+│   ├── manager.go
+│   ├── reverse_ws.go
+│   └── types.go
+├── handlers/           # 消息处理器
+│   └── message.go
+└── webview/            # 嵌入式浏览器
+    ├── browser.go
+    └── embedded_browser.go
 ```
 
 ### 添加新指令
