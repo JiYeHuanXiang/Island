@@ -1,0 +1,60 @@
+name: CI Build and Release
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build and create prerelease
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Build for multiple platforms
+        run: |
+          # Create output directory
+          mkdir -p output
+
+          # Build for macOS ARM64
+          GOOS=darwin GOARCH=arm64 go build -o output/island-darwin-arm64 main.go
+          
+          # Build for Windows AMD64
+          GOOS=windows GOARCH=amd64 go build -o output/island-windows-amd64.exe main.go
+          
+          # Build for Linux AMD64
+          GOOS=linux GOARCH=amd64 go build -o output/island-linux-amd64 main.go
+          
+          # Copy web directory to output
+          cp -r web output/web
+
+      - name: Zip artifacts
+        run: |
+          cd output
+          zip -r island-darwin-arm64.zip island-darwin-arm64 web/
+          zip -r island-windows-amd64.zip island-windows-amd64.exe web/
+          zip -r island-linux-amd64.zip island-linux-amd64 web/
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: prerelease-${{ github.sha }}
+          name: Development Build ${{ github.sha }}
+          draft: false
+          prerelease: true
+          files: |
+            output/island-darwin-arm64.zip
+            output/island-windows-amd64.zip
+            output/island-linux-amd64.zip
