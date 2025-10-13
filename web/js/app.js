@@ -26,17 +26,49 @@ const App = {
                 const result = Utils.simulateDiceRoll(command);
                 Utils.addMessage('result', result);
             }, 500);
-        } else if (SettingsManager.state.isConnected) {
-            // 发送到QQ机器人
-            // 这里应该通过WebSocket发送命令
-            Utils.addMessage('system', '命令已发送到QQ机器人');
         } else {
-            Utils.addMessage('system', '未连接到QQ机器人，命令将在本地处理');
+            // 发送到后端处理
+            this.sendCommandToBackend(command);
+        }
+    },
+
+    // 发送命令到后端
+    sendCommandToBackend(command) {
+        // 确保命令以"."开头
+        let processedCommand = command;
+        if (!command.startsWith('.')) {
+            processedCommand = '.' + command;
+        }
+        
+        fetch('/command', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ command: processedCommand })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.response) {
+                Utils.addMessage('result', data.response);
+            } else {
+                Utils.addMessage('system', '后端返回了空响应');
+            }
+        })
+        .catch(error => {
+            console.error('发送命令失败:', error);
+            Utils.addMessage('system', `发送命令失败: ${error.message}`);
+            // 失败时回退到本地处理
             setTimeout(() => {
                 const result = Utils.simulateDiceRoll(command);
                 Utils.addMessage('result', result);
             }, 500);
-        }
+        });
     },
 
     // 处理回车键

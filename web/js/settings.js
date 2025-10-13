@@ -110,11 +110,14 @@ const SettingsManager = {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
+            if (data.message && data.message.includes('成功')) {
                 Utils.addMessage('system', '连接设置已保存');
                 this.updateConnectionStatus(true);
-            } else {
+            } else if (data.error) {
                 Utils.addMessage('system', '连接设置保存失败: ' + data.error);
+            } else {
+                Utils.addMessage('system', '连接设置保存成功');
+                this.updateConnectionStatus(true);
             }
         })
         .catch(error => {

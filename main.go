@@ -20,12 +20,12 @@ func main() {
 		log.Printf("配置加载错误: %v", err)
 		log.Println("使用默认配置继续运行...")
 		appConfig = &config.Config{
-			HTTPPort:      "8088",
-			QQWSURL:       "",
-			QQHTTPURL:     "",
-			QQReverseWS:   "",
+			HTTPPort:       "8089",
+			QQWSURL:        "",
+			QQHTTPURL:      "",
+			QQReverseWS:    "",
 			ConnectionMode: "websocket",
-			QQGroupID:     []int64{},
+			QQGroupID:      []int64{},
 		}
 	}
 
