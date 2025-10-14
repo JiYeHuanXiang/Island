@@ -4,6 +4,7 @@ import (
 	"island/config"
 	"log"
 	"runtime"
+	"time"
 
 	"github.com/jchv/go-webview2"
 )
@@ -21,7 +22,7 @@ func OpenEmbeddedBrowser(appConfig *config.Config) {
 			Width:  1200,
 			Height: 800,
 		},
-		Debug: true,
+		Debug: false, // 生产环境关闭调试
 	})
 
 	if w == nil {
@@ -31,11 +32,20 @@ func OpenEmbeddedBrowser(appConfig *config.Config) {
 		return
 	}
 
-	log.Printf("正在启动嵌入式浏览器: http://localhost:%s", appConfig.HTTPPort)
-	
+	// 注意：当前webview2库版本可能不支持SetOnClose方法
+	// 窗口关闭时程序会继续在后台运行
+
+	log.Printf("正在启动嵌入式GUI: http://localhost:%s", appConfig.HTTPPort)
+
+	// 等待Web服务器完全启动
+	time.Sleep(1 * time.Second)
+
 	// 导航到本地Web服务器
-	w.Navigate("http://localhost:" + appConfig.HTTPPort)
-	
+	url := "http://localhost:" + appConfig.HTTPPort
+	w.Navigate(url)
+
+	log.Printf("嵌入式GUI已启动，如需使用浏览器访问: %s", url)
+
 	// 运行WebView消息循环
 	w.Run()
 }

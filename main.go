@@ -20,12 +20,12 @@ func main() {
 		log.Printf("配置加载错误: %v", err)
 		log.Println("使用默认配置继续运行...")
 		appConfig = &config.Config{
-			HTTPPort:      "8088",
-			QQWSURL:       "",
-			QQHTTPURL:     "",
-			QQReverseWS:   "",
+			HTTPPort:       "8088",
+			QQWSURL:        "",
+			QQHTTPURL:      "",
+			QQReverseWS:    "",
 			ConnectionMode: "websocket",
-			QQGroupID:     []int64{},
+			QQGroupID:      []int64{},
 		}
 	}
 
@@ -42,9 +42,9 @@ func main() {
 	// 等待Web服务器启动
 	time.Sleep(2 * time.Second)
 
-	// 启动浏览器显示Web UI
-	log.Println("正在启动浏览器显示Web UI...")
-	go webview.OpenBrowserAsync(appConfig)
+	// 启动嵌入式GUI作为默认界面
+	log.Println("正在启动嵌入式GUI...")
+	go webview.OpenEmbeddedBrowserAsync(appConfig)
 
 	// 如果配置完整，尝试连接
 	if err := appConfig.Validate(); err == nil {
