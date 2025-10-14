@@ -27,11 +27,18 @@ const App = {
                 Utils.addMessage('result', result);
             }, 500);
         } else if (SettingsManager.state.isConnected) {
-            // 发送到QQ机器人
-            // 这里应该通过WebSocket发送命令
-            Utils.addMessage('system', '命令已发送到QQ机器人');
+            // 发送到WebSocket
+            if (SettingsManager.sendCommandToWebSocket(command)) {
+                Utils.addMessage('system', '命令已发送到服务器');
+            } else {
+                Utils.addMessage('system', '命令发送失败，将在本地处理');
+                setTimeout(() => {
+                    const result = Utils.simulateDiceRoll(command);
+                    Utils.addMessage('result', result);
+                }, 500);
+            }
         } else {
-            Utils.addMessage('system', '未连接到QQ机器人，命令将在本地处理');
+            Utils.addMessage('system', '未连接到服务器，命令将在本地处理');
             setTimeout(() => {
                 const result = Utils.simulateDiceRoll(command);
                 Utils.addMessage('result', result);

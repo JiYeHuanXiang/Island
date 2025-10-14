@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebUI全面测试</title>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .pass { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+        .info { color: blue; }
+        button { margin: 5px; padding: 10px; }
+        #output { background: #f5f5f5; padding: 10px; margin: 10px 0; max-height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>Island:dice WebUI 全面测试</h1>
+    
+    <div class="test-section">
+        <h2>基础连接测试</h2>
+        <button onclick="testBasicConnection()">测试基础连接</button>
+        <div id="basic-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>API功能测试</h2>
+        <button onclick="testAPIs()">测试API功能</button>
+        <div id="api-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>命令处理测试</h2>
+        <button onclick="testCommands()">测试命令处理</button>
+        <div id="command-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>WebSocket测试</h2>
+        <button onclick="testWebSocket()">测试WebSocket</button>
+        <div id="ws-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>配置管理测试</h2>
+        <button onclick="testConfigManagement()">测试配置管理</button>
+        <div id="config-results"></div>
+    </div>
+    
+    <div id="output"></div>
+    
+    <script>
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            output.appendChild(div);
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function addResult(containerId, test, status, message) {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.innerHTML = `<strong>${test}:</strong> <span class="${status.toLowerCase()}">${status}</span> - ${message}`;
+            container.appendChild(div);
+        }
+        
+        async function testBasicConnection() {
+            log('开始基础连接测试...');
+            const container = document.getElementById('basic-results');
+            container.innerHTML = '';
+            
+            // 测试主页
+            try {
+                const response = await fetch('http://localhost:8088');
+                if (response.ok) {
+                    addResult('basic-results', '主页访问', 'PASS', 'HTTP 200 OK');
+                    log('主页访问成功');
+                } else {
+                    addResult('basic-results', '主页访问', 'FAIL', `HTTP ${response.status}`);
+                    log('主页访问失败: ' + response.status);
+                }
+            } catch (error) {
+                addResult('basic-results', '主页访问', 'FAIL', error.message);
+                log('主页访问错误: ' + error.message);
+            }
+            
+            // 测试静态资源
+            const staticResources = [
+                { name: 'CSS文件', url: 'http://localhost:8088/css/styles.css' },
+                { name: '主JS文件', url: 'http://localhost:8088/js/app.js' },
+                { name: '设置JS文件', url: 'http://localhost:8088/js/settings.js' },
+                { name: '工具JS文件', url: 'http://localhost:8088/js/utils.js' }
+            ];
+            
+            for (const resource of staticResources) {
+                try {
+                    const response = await fetch(resource.url);
+                    if (response.ok) {
+                        addResult('basic-results', resource.name, 'PASS', '加载成功');
+                        log(`${resource.name} 加载成功`);
+                    } else {
+                        addResult('basic-results', resource.name, 'FAIL', `HTTP ${response.status}`);
+                        log(`${resource.name} 加载失败: ${response.status}`);
+                    }
+                } catch (error) {
+                    addResult('basic-results', resource.name, 'FAIL', error.message);
+                    log(`${resource.name} 加载错误: ${error.message}`);
+                }
+            }
+        }
+        
+        async function testAPIs() {
+            log('开始API功能测试...');
+            const container = document.getElementById('api-results');
+            container.innerHTML = '';
+            
+            // 测试设置API GET
+            try {
+                const response = await fetch('http://localhost:8088/api/settings');
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult('api-results', '设置API GET', 'PASS', `配置加载成功`);
+                    log('设置API GET成功: ' + JSON.stringify(data));
+                } else {
+                    addResult('api-results', '设置API GET', 'FAIL', `HTTP ${response.status}`);
+                    log('设置API GET失败: ' + response.status);
+                }
+            } catch (error) {
+                addResult('api-results', '设置API GET', 'FAIL', error.message);
+                log('设置API GET错误: ' + error.message);
+            }
+            
+            // 测试设置API POST
+            try {
+                const testConfig = {
+                    httpPort: 8088,
+                    connectionMode: 'websocket',
+                    qqWSURL: 'ws://test.example.com:3009'
+                };
+                
+                const response = await fetch('http://localhost:8088/api/settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testConfig)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult('api-results', '设置API POST', 'PASS', '配置更新成功');
+                    log('设置API POST成功: ' + JSON.stringify(data));
+                } else {
+                    const errorText = await response.text();
+                    addResult('api-results', '设置API POST', 'FAIL', `HTTP ${response.status}: ${errorText}`);
+                    log('设置API POST失败: ' + response.status + ' - ' + errorText);
+                }
+            } catch (error) {
+                addResult('api-results', '设置API POST', 'FAIL', error.message);
+                log('设置API POST错误: ' + error.message);
+            }
+        }
+        
+        async function testCommands() {
+            log('开始命令处理测试...');
+            const container = document.getElementById('command-results');
+            container.innerHTML = '';
+            
+            const testCommands = [
+                { name: '帮助命令', command: '.help' },
+                { name: '骰子命令', command: '.r 3d6' },
+                { name: 'COC角色生成', command: '.coc7' },
+                { name: 'DND属性生成', command: '.dnd str' },
+                { name: '技能检定', command: '.ra 50' },
+                { name: '理智检定', command: '.sc 50/30' }
+            ];
+            
+            for (const test of testCommands) {
+                try {
+                    const response = await fetch('http://localhost:8088/command', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({command: test.command})
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        addResult('command-results', test.name, 'PASS', '命令执行成功');
+                        log(`${test.name} 执行成功: ${data.response.substring(0, 100)}...`);
+                    } else {
+                        addResult('command-results', test.name, 'FAIL', `HTTP ${response.status}`);
+                        log(`${test.name} 执行失败: ${response.status}`);
+                    }
+                } catch (error) {
+                    addResult('command-results', test.name, 'FAIL', error.message);
+                    log(`${test.name} 执行错误: ${error.message}`);
+                }
+            }
+        }
+        
+        function testWebSocket() {
+            log('开始WebSocket测试...');
+            const container = document.getElementById('ws-results');
+            container.innerHTML = '';
+            
+            try {
+                const ws = new WebSocket('ws://localhost:8088/ws');
+                let connected = false;
+                
+                ws.onopen = function() {
+                    connected = true;
+                    addResult('ws-results', 'WebSocket连接', 'PASS', '连接建立成功');
+                    log('WebSocket连接建立成功');
+                    
+                    // 发送测试消息
+                    ws.send(JSON.stringify({command: '.help'}));
+                    log('发送测试消息到WebSocket');
+                };
+                
+                ws.onmessage = function(event) {
+                    addResult('ws-results', 'WebSocket消息', 'PASS', '收到响应消息');
+                    log('WebSocket收到消息: ' + event.data.substring(0, 100) + '...');
+                };
+                
+                ws.onerror = function(error) {
+                    addResult('ws-results', 'WebSocket连接', 'FAIL', '连接错误');
+                    log('WebSocket连接错误: ' + error);
+                };
+                
+                ws.onclose = function() {
+                    if (connected) {
+                        addResult('ws-results', 'WebSocket关闭', 'PASS', '连接正常关闭');
+                        log('WebSocket连接正常关闭');
+                    } else {
+                        addResult('ws-results', 'WebSocket连接', 'FAIL', '连接失败');
+                        log('WebSocket连接失败');
+                    }
+                };
+                
+                // 5秒后关闭连接
+                setTimeout(() => {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.close();
+                    }
+                }, 5000);
+                
+            } catch (error) {
+                addResult('ws-results', 'WebSocket创建', 'FAIL', error.message);
+                log('WebSocket创建错误: ' + error.message);
+            }
+        }
+        
+        async function testConfigManagement() {
+            log('开始配置管理测试...');
+            const container = document.getElementById('config-results');
+            container.innerHTML = '';
+            
+            // 测试获取当前配置
+            try {
+                const response = await fetch('http://localhost:8088/api/settings');
+                if (response.ok) {
+                    const config = await response.json();
+                    addResult('config-results', '获取配置', 'PASS', '配置获取成功');
+                    log('当前配置: ' + JSON.stringify(config));
+                    
+                    // 验证配置结构
+                    const requiredFields = ['HTTPPort', 'ConnectionMode', 'QQWSURL', 'QQHTTPURL', 'QQReverseWS'];
+                    let configValid = true;
+                    for (const field of requiredFields) {
+                        if (!(field in config)) {
+                            configValid = false;
+                            break;
+                        }
+                    }
+                    
+                    if (configValid) {
+                        addResult('config-results', '配置结构', 'PASS', '配置结构完整');
+                        log('配置结构验证通过');
+                    } else {
+                        addResult('config-results', '配置结构', 'FAIL', '配置结构不完整');
+                        log('配置结构验证失败');
+                    }
+                } else {
+                    addResult('config-results', '获取配置', 'FAIL', `HTTP ${response.status}`);
+                    log('获取配置失败: ' + response.status);
+                }
+            } catch (error) {
+                addResult('config-results', '获取配置', 'FAIL', error.message);
+                log('获取配置错误: ' + error.message);
+            }
+        }
+        
+        // 运行所有测试
+        function runAllTests() {
+            log('开始运行所有测试...');
+            testBasicConnection();
+            setTimeout(() => testAPIs(), 1000);
+            setTimeout(() => testCommands(), 2000);
+            setTimeout(() => testWebSocket(), 3000);
+            setTimeout(() => testConfigManagement(), 4000);
+        }
+        
+        // 页面加载完成后的初始化
+        window.onload = function() {
+            log('WebUI测试页面加载完成');
+            log('点击各个测试按钮或运行所有测试');
+        };
+    </script>
+    
+    <div style="margin-top: 20px;">
+        <button onclick="runAllTests()" style="background: #007cba; color: white; padding: 15px 30px; font-size: 16px;">运行所有测试</button>
+        <button onclick="document.getElementById('output').innerHTML = ''" style="background: #666; color: white; padding: 15px 30px; font-size: 16px;">清除日志</button>
+    </div>
+</body>
+</html>

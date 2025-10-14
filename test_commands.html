@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>命令处理测试</title>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .command-input { width: 300px; padding: 5px; margin: 5px; }
+        .btn { padding: 8px 15px; margin: 5px; background: #007cba; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        .btn:hover { background: #005a87; }
+        #output { background: #f5f5f5; padding: 10px; margin: 10px 0; max-height: 400px; overflow-y: auto; border: 1px solid #ddd; }
+        .message { margin: 5px 0; padding: 5px; border-left: 3px solid #007cba; }
+        .command { background: #e7f3ff; }
+        .result { background: #f0f8f0; }
+        .system { background: #fff8e1; }
+    </style>
+</head>
+<body>
+    <h1>命令处理测试页面</h1>
+    
+    <div class="test-section">
+        <h2>WebSocket连接测试</h2>
+        <button class="btn" onclick="testWebSocketConnection()">测试WebSocket连接</button>
+        <button class="btn" onclick="disconnectWebSocket()">断开连接</button>
+        <div id="ws-status">未连接</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>命令测试</h2>
+        <input type="text" class="command-input" id="commandInput" placeholder="输入命令，例如: .help" value=".help">
+        <button class="btn" onclick="sendCommand()">发送命令</button>
+        <button class="btn" onclick="sendTestCommands()">发送测试命令集</button>
+        <button class="btn" onclick="clearOutput()">清除输出</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>输出日志</h2>
+        <div id="output"></div>
+    </div>
+    
+    <script>
+        let ws = null;
+        let isConnected = false;
+        
+        function log(message, type = 'system') {
+            const output = document.getElementById('output');
+            const div = document.createElement('div');
+            div.className = `message ${type}`;
+            div.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            output.appendChild(div);
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function updateWSStatus(status) {
+            document.getElementById('ws-status').textContent = status;
+            isConnected = (status === '已连接');
+        }
+        
+        function testWebSocketConnection() {
+            if (ws) {
+                ws.close();
+            }
+            
+            log('正在建立WebSocket连接...', 'system');
+            updateWSStatus('连接中...');
+            
+            try {
+                ws = new WebSocket('ws://localhost:8088/ws');
+                
+                ws.onopen = function() {
+                    log('WebSocket连接已建立', 'system');
+                    updateWSStatus('已连接');
+                };
+                
+                ws.onmessage = function(event) {
+                    log(`收到响应: ${event.data}`, 'result');
+                };
+                
+                ws.onerror = function(error) {
+                    log(`WebSocket错误: ${error}`, 'system');
+                    updateWSStatus('连接错误');
+                };
+                
+                ws.onclose = function() {
+                    log('WebSocket连接已关闭', 'system');
+                    updateWSStatus('已断开');
+                    isConnected = false;
+                };
+                
+            } catch (error) {
+                log(`WebSocket创建失败: ${error.message}`, 'system');
+                updateWSStatus('创建失败');
+            }
+        }
+        
+        function disconnectWebSocket() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+            updateWSStatus('已断开');
+        }
+        
+        function sendCommand() {
+            const command = document.getElementById('commandInput').value.trim();
+            if (!command) {
+                log('请输入命令', 'system');
+                return;
+            }
+            
+            if (!isConnected) {
+                log('WebSocket未连接，请先建立连接', 'system');
+                return;
+            }
+            
+            log(`发送命令: ${command}`, 'command');
+            ws.send(command);
+        }
+        
+        function sendTestCommands() {
+            const testCommands = [
+                '.help',
+                '.r 3d6',
+                '.coc7',
+                '.ra 50',
+                '.sc 50/30',
+                '.dnd str',
+                '.r 测试骰子'
+            ];
+            
+            if (!isConnected) {
+                log('WebSocket未连接，请先建立连接', 'system');
+                return;
+            }
+            
+            log('开始发送测试命令集...', 'system');
+            testCommands.forEach((cmd, index) => {
+                setTimeout(() => {
+                    log(`发送命令 ${index + 1}: ${cmd}`, 'command');
+                    ws.send(cmd);
+                }, index * 1000);
+            });
+        }
+        
+        function clearOutput() {
+            document.getElementById('output').innerHTML = '';
+        }
+        
+        // 回车键发送命令
+        document.getElementById('commandInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendCommand();
+            }
+        });
+        
+        // 页面加载完成后自动尝试连接
+        window.onload = function() {
+            log('命令测试页面加载完成', 'system');
+            log('点击"测试WebSocket连接"按钮开始测试', 'system');
+        };
+    </script>
+</body>
+</html>

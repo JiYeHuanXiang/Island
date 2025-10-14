@@ -110,11 +110,12 @@ const SettingsManager = {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
+            if (data.message === '配置更新成功') {
                 Utils.addMessage('system', '连接设置已保存');
-                this.updateConnectionStatus(true);
+                // 建立WebSocket连接
+                this.establishWebSocketConnection();
             } else {
-                Utils.addMessage('system', '连接设置保存失败: ' + data.error);
+                Utils.addMessage('system', '连接设置保存失败: ' + (data.error || '未知错误'));
             }
         })
         .catch(error => {
@@ -125,6 +126,51 @@ const SettingsManager = {
         });
     },
 
+    // 建立WebSocket连接
+    establishWebSocketConnection() {
+        if (this.state.ws) {
+            this.state.ws.close();
+        }
+
+        const wsUrl = `ws://localhost:${document.getElementById('httpPort').value || '8088'}/ws`;
+        Utils.addMessage('system', '正在建立WebSocket连接...');
+
+        try {
+            this.state.ws = new WebSocket(wsUrl);
+            
+            this.state.ws.onopen = () => {
+                Utils.addMessage('system', 'WebSocket连接已建立');
+                this.updateConnectionStatus(true);
+            };
+
+            this.state.ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.response) {
+                        Utils.addMessage('result', data.response);
+                    }
+                } catch (e) {
+                    // 如果不是JSON，直接显示文本
+                    Utils.addMessage('result', event.data);
+                }
+            };
+
+            this.state.ws.onerror = (error) => {
+                Utils.addMessage('system', 'WebSocket连接错误: ' + error);
+                this.updateConnectionStatus(false);
+            };
+
+            this.state.ws.onclose = () => {
+                Utils.addMessage('system', 'WebSocket连接已关闭');
+                this.updateConnectionStatus(false);
+            };
+
+        } catch (error) {
+            Utils.addMessage('system', 'WebSocket连接失败: ' + error.message);
+            this.updateConnectionStatus(false);
+        }
+    },
+
     // 断开连接
     disconnect() {
         if (this.state.ws) {
@@ -133,6 +179,22 @@ const SettingsManager = {
         }
         this.updateConnectionStatus(false);
         Utils.addMessage('system', '已断开连接');
+    },
+
+    // 发送命令到WebSocket
+    sendCommandToWebSocket(command) {
+        if (!this.state.ws || this.state.ws.readyState !== WebSocket.OPEN) {
+            Utils.addMessage('system', 'WebSocket未连接，无法发送命令');
+            return false;
+        }
+
+        try {
+            this.state.ws.send(command);
+            return true;
+        } catch (error) {
+            Utils.addMessage('system', '发送命令失败: ' + error.message);
+            return false;
+        }
     },
 
     // 更新连接状态
@@ -264,13 +326,34 @@ const SettingsManager = {
         // 设置发送目标切换监听器
         document.getElementById('sendToQQ').addEventListener('change', function() {
             const label = document.getElementById('targetLabel');
-            label.textContent = this.checked ? '发送到QQ' : '本地处理';
+            label.textContent = this.checked ? '发送到服务器' : '本地处理';
         });
 
         // 加载保存的设置
         this.loadSavedSettings();
 
+        // 尝试自动连接
+        this.autoConnect();
+
         Utils.addMessage('system', '设置管理器已初始化');
+    },
+
+    // 自动连接
+    autoConnect() {
+        // 检查是否有保存的连接设置
+        const savedSettings = localStorage.getItem('connectionSettings');
+        if (savedSettings) {
+            try {
+                const settings = JSON.parse(savedSettings);
+                // 如果之前有连接，尝试重新连接
+                if (settings.httpPort) {
+                    Utils.addMessage('system', '尝试自动连接...');
+                    this.establishWebSocketConnection();
+                }
+            } catch (e) {
+                Utils.addMessage('system', '自动连接失败: 配置解析错误');
+            }
+        }
     }
 };
 

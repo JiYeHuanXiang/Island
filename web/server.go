@@ -32,7 +32,7 @@ type CommandResponse struct {
 
 func StartHTTPServer(appConfig *config.Config, handler *handlers.MessageHandler) {
 	msgHandler = handler
-	
+
 	// 自定义处理函数，处理根路径并提供index.html
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// 如果是根路径，提供index.html
@@ -40,32 +40,32 @@ func StartHTTPServer(appConfig *config.Config, handler *handlers.MessageHandler)
 			http.ServeFile(w, r, "web/index.html")
 			return
 		}
-		
+
 		// 如果是静态资源路径，提供对应的文件
 		if r.URL.Path == "/css/styles.css" {
 			http.ServeFile(w, r, "web/css/styles.css")
 			return
 		}
-		
+
 		if r.URL.Path == "/js/utils.js" {
 			http.ServeFile(w, r, "web/js/utils.js")
 			return
 		}
-		
+
 		if r.URL.Path == "/js/settings.js" {
 			http.ServeFile(w, r, "web/js/settings.js")
 			return
 		}
-		
+
 		if r.URL.Path == "/js/app.js" {
 			http.ServeFile(w, r, "web/js/app.js")
 			return
 		}
-		
+
 		// 其他路径返回404
 		http.NotFound(w, r)
 	})
-	
+
 	http.HandleFunc("/ws", handleWebSocket)
 	http.HandleFunc("/command", handleCommand)
 	http.HandleFunc("/api/settings", handleSettings)
@@ -128,15 +128,22 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			var msgData map[string]interface{}
 			if err := json.Unmarshal(message, &msgData); err != nil {
 				// 如果不是JSON格式，当作普通命令处理
-				response := msgHandler.ProcessCommand(string(message))
+				command := string(message)
+				log.Printf("收到WebSocket命令: %s", command)
+				response := msgHandler.ProcessCommand(command)
+
+				// 发送响应回WebSocket客户端
 				if err := conn.WriteMessage(websocket.TextMessage, []byte(response)); err != nil {
 					log.Printf("WebSocket写入错误: %v", err)
 					break
 				}
 
-				// 同时发送到QQ
-				if err := msgHandler.SendToQQ(response); err != nil {
-					log.Printf("发送到QQ失败: %v", err)
+				// 如果配置了QQ连接，也发送到QQ
+				currentConfig := msgHandler.GetCurrentConfig()
+				if currentConfig != nil && len(currentConfig.QQGroupID) > 0 {
+					if err := msgHandler.SendToQQ(response); err != nil {
+						log.Printf("发送到QQ失败: %v", err)
+					}
 				}
 				continue
 			}
@@ -265,42 +272,42 @@ func handleSettings(w http.ResponseWriter, r *http.Request) {
 
 		// 转换为Config结构体
 		newConfig := config.Config{}
-		
+
 		// 处理HTTP端口
 		if httpPort, ok := settingsData["httpPort"].(float64); ok {
 			newConfig.HTTPPort = fmt.Sprintf("%.0f", httpPort)
 		} else if httpPort, ok := settingsData["HTTPPort"].(string); ok {
 			newConfig.HTTPPort = httpPort
 		}
-		
+
 		// 处理连接模式
 		if connectionMode, ok := settingsData["connectionMode"].(string); ok {
 			newConfig.ConnectionMode = connectionMode
 		} else if connectionMode, ok := settingsData["ConnectionMode"].(string); ok {
 			newConfig.ConnectionMode = connectionMode
 		}
-		
+
 		// 处理WebSocket URL
 		if qqWSURL, ok := settingsData["qqWSURL"].(string); ok {
 			newConfig.QQWSURL = qqWSURL
 		} else if qqWSURL, ok := settingsData["QQWSURL"].(string); ok {
 			newConfig.QQWSURL = qqWSURL
 		}
-		
+
 		// 处理HTTP URL
 		if qqHTTPURL, ok := settingsData["qqHTTPURL"].(string); ok {
 			newConfig.QQHTTPURL = qqHTTPURL
 		} else if qqHTTPURL, ok := settingsData["QQHTTPURL"].(string); ok {
 			newConfig.QQHTTPURL = qqHTTPURL
 		}
-		
+
 		// 处理反向WebSocket端口
 		if qqReverseWS, ok := settingsData["qqReverseWS"].(string); ok {
 			newConfig.QQReverseWS = qqReverseWS
 		} else if qqReverseWS, ok := settingsData["QQReverseWS"].(string); ok {
 			newConfig.QQReverseWS = qqReverseWS
 		}
-		
+
 		// 处理访问令牌
 		if qqAccessToken, ok := settingsData["qqAccessToken"].(string); ok {
 			newConfig.QQAccessToken = qqAccessToken
