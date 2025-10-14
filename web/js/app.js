@@ -34,12 +34,29 @@ const App = {
 
     // 发送命令到后端
     sendCommandToBackend(command) {
-        // 确保命令以"."开头
+        // 使用自定义指令前缀或确保命令以"."开头
         let processedCommand = command;
-        if (!command.startsWith('.')) {
-            processedCommand = '.' + command;
+        const prefix = CustomSettings.getCommandPrefix();
+        const rollCommand = CustomSettings.getRollCommand();
+        const helpCommand = CustomSettings.getHelpCommand();
+        
+        // 处理指令前缀
+        if (!command.startsWith(prefix)) {
+            processedCommand = prefix + command;
         }
         
+        // 处理投掷指令替换
+        if (command.startsWith(prefix + "r ")) {
+            processedCommand = prefix + rollCommand + command.substring(prefix.length + 1);
+        } else if (command === prefix + "r") {
+            processedCommand = prefix + rollCommand;
+        }
+        
+        // 处理帮助指令替换
+        if (command === prefix + "help") {
+            processedCommand = prefix + helpCommand;
+        }
+
         fetch('/command', {
             method: 'POST',
             headers: {
@@ -212,6 +229,9 @@ const App = {
     init() {
         // 初始化设置管理器
         SettingsManager.init();
+        
+        // 初始化自定义设置
+        CustomSettings.init();
         
         // 初始化事件监听器
         this.initEventListeners();

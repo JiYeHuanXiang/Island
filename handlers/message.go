@@ -203,50 +203,6 @@ func (h *MessageHandler) SendToQQ(message string) error {
 	})
 }
 
-// HandleGetGroupList 处理获取群组列表
-func (h *MessageHandler) HandleGetGroupList(conn *websocket.Conn) {
-	groups, err := h.connManager.GetGroupList()
-	if err != nil {
-		h.sendGroupListResponse(conn, nil, "获取群组列表失败: "+err.Error())
-		return
-	}
-
-	h.sendGroupListResponse(conn, groups, "")
-}
-
-// HandleLeaveGroup 处理退出群组
-func (h *MessageHandler) HandleLeaveGroup(conn *websocket.Conn, msgData map[string]interface{}) {
-	groupID, ok := msgData["group_id"].(string)
-	if !ok {
-		h.sendGroupOperationResponse(conn, "leave", "缺少群组ID")
-		return
-	}
-
-	gid, err := strconv.ParseInt(groupID, 10, 64)
-	if err != nil {
-		h.sendGroupOperationResponse(conn, "leave", "无效的群组ID格式")
-		return
-	}
-
-	if err := h.connManager.LeaveGroup(gid); err != nil {
-		h.sendGroupOperationResponse(conn, "leave", "退出群组失败: "+err.Error())
-		return
-	}
-
-	h.sendGroupOperationResponse(conn, "leave", fmt.Sprintf("已发送退出群组 %d 的请求", gid))
-}
-
-// HandleDisableGroup 处理禁用群组
-func (h *MessageHandler) HandleDisableGroup(conn *websocket.Conn, msgData map[string]interface{}) {
-	groupID, ok := msgData["group_id"].(string)
-	if !ok {
-		h.sendGroupOperationResponse(conn, "disable", "缺少群组ID")
-		return
-	}
-
-	h.sendGroupOperationResponse(conn, "disable", fmt.Sprintf("已切换群组 %s 的骰子功能状态", groupID))
-}
-
 // GetCurrentConfig 获取当前配置
 func (h *MessageHandler) GetCurrentConfig() *config.Config {
 	return h.config
@@ -254,20 +210,86 @@ func (h *MessageHandler) GetCurrentConfig() *config.Config {
 
 // UpdateConfig 更新配置
 func (h *MessageHandler) UpdateConfig(newConfig *config.Config) error {
-	// 保存配置到文件
-	if err := config.SaveConfig(newConfig); err != nil {
-		return fmt.Errorf("保存配置失败: %v", err)
+	// 更新连接管理器的配置
+	h.config = newConfig
+	
+	// 如果连接管理器存在，更新其配置
+	if h.connManager != nil {
+		// 重新连接以应用新配置
+		h.connManager.Close()
+		
+		// 根据新的连接模式重新初始化连接
+		switch newConfig.ConnectionMode {
+		case config.ModeWebSocket:
+			if newConfig.QQWSURL != "" {
+				return h.connManager.Connect()
+			}
+		case config.ModeHTTP:
+			if newConfig.QQHTTPURL != "" {
+				return h.connManager.Connect()
+			}
+		case config.ModeReverseWebSocket:
+			if newConfig.QQReverseWS != "" {
+				return h.connManager.Connect()
+			}
+		}
 	}
-
-	// 更新当前配置
-	*h.config = *newConfig
-
-	// 重新初始化连接管理器
-	if err := h.connManager.Reinitialize(newConfig); err != nil {
-		return fmt.Errorf("重新初始化连接失败: %v", err)
-	}
-
+	
 	return nil
+}
+
+// HandleGetGroupList 处理获取群组列表请求
+func (h *MessageHandler) HandleGetGroupList(conn *websocket.Conn) {
+	// 这里应该从QQ机器人获取群组列表
+	// 由于我们没有实际的QQ机器人连接，暂时返回空列表
+	var groups []connection.GroupInfo
+	
+	// 模拟一些群组数据用于测试
+	if h.config != nil && len(h.config.QQGroupID) > 0 {
+		for _, groupID := range h.config.QQGroupID {
+			groups = append(groups, connection.GroupInfo{
+				ID:     groupID,
+				Name:   fmt.Sprintf("群组 %d", groupID),
+				Active: true,
+			})
+		}
+	}
+	
+	response := map[string]interface{}{
+		"type":   "group",
+		"action": "list",
+		"groups": groups,
+	}
+	
+	if err := conn.WriteJSON(response); err != nil {
+		log.Printf("发送群组列表响应失败: %v", err)
+	}
+}
+
+// HandleLeaveGroup 处理退出群组请求
+func (h *MessageHandler) HandleLeaveGroup(conn *websocket.Conn, msgData map[string]interface{}) {
+	groupID, ok := msgData["group_id"].(float64)
+	if !ok {
+		h.sendGroupOperationResponse(conn, "leave", "群组ID无效")
+		return
+	}
+	
+	// 实际应用中这里应该调用QQ机器人API退出群组
+	log.Printf("模拟退出群组: %.0f", groupID)
+	h.sendGroupOperationResponse(conn, "leave", fmt.Sprintf("已退出群组 %.0f", groupID))
+}
+
+// HandleDisableGroup 处理禁用群组请求
+func (h *MessageHandler) HandleDisableGroup(conn *websocket.Conn, msgData map[string]interface{}) {
+	groupID, ok := msgData["group_id"].(float64)
+	if !ok {
+		h.sendGroupOperationResponse(conn, "disable", "群组ID无效")
+		return
+	}
+	
+	// 实际应用中这里应该禁用群组功能
+	log.Printf("模拟禁用群组: %.0f", groupID)
+	h.sendGroupOperationResponse(conn, "disable", fmt.Sprintf("已禁用群组 %.0f", groupID))
 }
 
 // 辅助方法

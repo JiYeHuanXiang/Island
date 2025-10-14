@@ -5,10 +5,11 @@ import (
 	"island/connection"
 	"island/handlers"
 	"island/web"
-	"island/webview"
 	"log"
 	"math/rand"
 	"time"
+	"os/exec"
+	"runtime"
 )
 
 func main() {
@@ -44,7 +45,7 @@ func main() {
 
 	// 启动浏览器显示Web UI
 	log.Println("正在启动浏览器显示Web UI...")
-	go webview.OpenBrowserAsync(appConfig)
+	go OpenBrowser(appConfig)
 
 	// 如果配置完整，尝试连接
 	if err := appConfig.Validate(); err == nil {
@@ -74,4 +75,49 @@ func main() {
 
 	// 保持主程序运行
 	select {}
+}
+
+// OpenBrowser 使用系统默认浏览器打开Web UI
+func OpenBrowser(appConfig *config.Config) {
+	// 等待Web服务器完全启动
+	time.Sleep(3 * time.Second)
+
+	// 使用127.0.0.1代替localhost以提高响应速度
+	url := "http://127.0.0.1:" + appConfig.HTTPPort
+	log.Printf("正在打开系统默认浏览器: %s", url)
+
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.Command("cmd", "/c", "start", url)
+	case "darwin":
+		cmd = exec.Command("open", url)
+	case "linux":
+		cmd = exec.Command("xdg-open", url)
+	default:
+		log.Printf("不支持的操作系统: %s", runtime.GOOS)
+		return
+	}
+
+	if err := cmd.Start(); err != nil {
+		log.Printf("启动浏览器失败: %v", err)
+		return
+	}
+
+	// 设置一个超时时间，避免阻塞
+	done := make(chan error, 1)
+	go func() {
+		done <- cmd.Wait()
+	}()
+
+	select {
+	case <-time.After(5 * time.Second):
+		log.Println("启动浏览器超时，但命令已在后台运行")
+	case err := <-done:
+		if err != nil {
+			log.Printf("启动浏览器出错: %v", err)
+		} else {
+			log.Println("浏览器已成功启动")
+		}
+	}
 }

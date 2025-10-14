@@ -20,6 +20,7 @@
                 <div class="tab active" onclick="switchTab('connection-settings')">连接设置</div>
                 <div class="tab" onclick="switchTab('admin-settings')">管理员设置</div>
                 <div class="tab" onclick="switchTab('group-management')">群组管理</div>
+                <div class="tab" onclick="switchTab('custom-settings')">自定义设置</div>
             </div>
             
             <!-- 连接设置 -->
@@ -114,6 +115,37 @@
                     <!-- 群组列表将在这里动态生成 -->
                 </div>
             </div>
+
+            <!-- 自定义设置 -->
+            <div id="custom-settings" class="admin-settings">
+                <div class="settings-group">
+                    <div class="settings-label"><i class="fas fa-magic"></i> 指令前缀:</div>
+                    <input type="text" id="commandPrefix" placeholder="请输入指令前缀，例如: ." value=".">
+                </div>
+                
+                <div class="settings-group">
+                    <div class="settings-label"><i class="fas fa-dice"></i> 投掷指令:</div>
+                    <input type="text" id="rollCommand" placeholder="投掷指令，例如: r" value="r">
+                </div>
+                
+                <div class="settings-group">
+                    <div class="settings-label"><i class="fas fa-question-circle"></i> 帮助指令:</div>
+                    <input type="text" id="helpCommand" placeholder="帮助指令，例如: help" value="help">
+                </div>
+                
+                <div class="settings-group">
+                    <div class="settings-label"><i class="fas fa-comment"></i> 成功提示文本:</div>
+                    <input type="text" id="successText" placeholder="保存成功时的提示文本" value="设置已保存">
+                </div>
+                <div class="settings-group">
+                    <div class="settings-label"><i class="fas fa-comment"></i> 失败提示文本:</div>
+                    <input type="text" id="failureText" placeholder="保存失败时的提示文本" value="设置保存失败">
+                </div>
+                <div class="settings-group">
+                    <div class="settings-label"></div>
+                    <button onclick="saveCustomSettings()"><i class="fas fa-save"></i> 保存自定义设置</button>
+                </div>
+            </div>
         </div>
 
         <!-- 命令输入区域 -->
@@ -154,6 +186,7 @@
 
     <script src="js/utils.js"></script>
     <script src="js/settings.js"></script>
+    <script src="js/custom.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

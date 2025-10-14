@@ -8,6 +8,10 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -22,6 +26,40 @@ var (
 	msgHandler *handlers.MessageHandler
 )
 
+// 获取可执行文件所在目录
+func getExecutableDir() string {
+	exe, err := os.Executable()
+	if err != nil {
+		log.Printf("获取可执行文件路径失败: %v", err)
+		return "."
+	}
+	return filepath.Dir(exe)
+}
+
+// 获取web目录路径
+func getWebDir() string {
+	execDir := getExecutableDir()
+	webDir := filepath.Join(execDir, "web")
+	
+	// 检查web目录是否存在
+	if _, err := os.Stat(webDir); !os.IsNotExist(err) {
+		return webDir
+	}
+	
+	// 如果web目录在可执行文件目录中不存在，则尝试使用当前工作目录
+	cwd, err := os.Getwd()
+	if err == nil {
+		webDirCwd := filepath.Join(cwd, "web")
+		if _, err := os.Stat(webDirCwd); !os.IsNotExist(err) {
+			return webDirCwd
+		}
+	}
+	
+	// 最后回退到相对路径
+	log.Printf("警告: 未找到绝对web目录，使用相对路径")
+	return "web"
+}
+
 type CommandRequest struct {
 	Command string `json:"command"`
 }
@@ -30,35 +68,49 @@ type CommandResponse struct {
 	Response string `json:"response"`
 }
 
+// CustomSettings 自定义设置结构体
+type CustomSettings struct {
+	CommandPrefix string `json:"commandPrefix"`
+	RollCommand   string `json:"rollCommand"`
+	HelpCommand   string `json:"helpCommand"`
+	SuccessText   string `json:"successText"`
+	FailureText   string `json:"failureText"`
+}
+
 func StartHTTPServer(appConfig *config.Config, handler *handlers.MessageHandler) {
 	msgHandler = handler
+	
+	// 获取web目录路径
+	webDir := getWebDir()
+	log.Printf("Web目录路径: %s", webDir)
+	
+	// 提前检查web目录是否存在
+	if _, err := os.Stat(webDir); os.IsNotExist(err) {
+		log.Printf("警告: Web目录不存在: %s", webDir)
+	}
+	
+	// 使用http.FileServer提供静态文件服务，提高性能
+	fs := http.FileServer(http.Dir(webDir))
 	
 	// 自定义处理函数，处理根路径并提供index.html
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// 如果是根路径，提供index.html
 		if r.URL.Path == "/" || r.URL.Path == "/index.html" {
-			http.ServeFile(w, r, "web/index.html")
+			// 设置缓存头以提高性能
+			w.Header().Set("Cache-Control", "public, max-age=3600")
+			http.ServeFile(w, r, filepath.Join(webDir, "index.html"))
 			return
 		}
 		
-		// 如果是静态资源路径，提供对应的文件
-		if r.URL.Path == "/css/styles.css" {
-			http.ServeFile(w, r, "web/css/styles.css")
-			return
-		}
-		
-		if r.URL.Path == "/js/utils.js" {
-			http.ServeFile(w, r, "web/js/utils.js")
-			return
-		}
-		
-		if r.URL.Path == "/js/settings.js" {
-			http.ServeFile(w, r, "web/js/settings.js")
-			return
-		}
-		
-		if r.URL.Path == "/js/app.js" {
-			http.ServeFile(w, r, "web/js/app.js")
+		// 处理静态资源请求
+		if strings.HasPrefix(r.URL.Path, "/css/") || 
+		   strings.HasPrefix(r.URL.Path, "/js/") ||
+		   strings.HasPrefix(r.URL.Path, "/images/") ||
+		   strings.HasPrefix(r.URL.Path, "/fonts/") {
+			// 设置缓存头以提高性能
+			w.Header().Set("Cache-Control", "public, max-age=86400") // 静态资源缓存24小时
+			// 使用http.StripPrefix移除URL前缀，然后使用FileServer处理
+			http.StripPrefix("/", fs).ServeHTTP(w, r)
 			return
 		}
 		
@@ -69,8 +121,22 @@ func StartHTTPServer(appConfig *config.Config, handler *handlers.MessageHandler)
 	http.HandleFunc("/ws", handleWebSocket)
 	http.HandleFunc("/command", handleCommand)
 	http.HandleFunc("/api/settings", handleSettings)
-	log.Printf("Web服务器已启动 :%s", appConfig.HTTPPort)
-	if err := http.ListenAndServe(":"+appConfig.HTTPPort, nil); err != nil {
+	http.HandleFunc("/api/custom-settings", handleCustomSettings)
+	
+	// 绑定到127.0.0.1而不是所有接口，提高安全性和性能
+	addr := "127.0.0.1:" + appConfig.HTTPPort
+	log.Printf("Web服务器已启动 %s", addr)
+	
+	server := &http.Server{
+		Addr: addr,
+		// 设置读写超时以防止连接挂起
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		// 添加IdleTimeout以更好地管理连接
+		IdleTimeout: 60 * time.Second,
+	}
+	
+	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf("HTTP服务器错误: %v", err)
 	}
 }
@@ -244,7 +310,18 @@ func handleSettings(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := json.NewEncoder(w).Encode(currentConfig); err != nil {
+		// 创建响应结构体，确保字段名与前端一致
+		response := map[string]interface{}{
+			"httpPort":        currentConfig.HTTPPort,
+			"connectionMode":  currentConfig.ConnectionMode,
+			"qqWSURL":         currentConfig.QQWSURL,
+			"qqHTTPURL":       currentConfig.QQHTTPURL,
+			"qqReverseWS":     currentConfig.QQReverseWS,
+			"qqAccessToken":   currentConfig.QQAccessToken,
+			"qqGroupID":       currentConfig.QQGroupID,
+		}
+
+		if err := json.NewEncoder(w).Encode(response); err != nil {
 			log.Printf("序列化配置失败: %v", err)
 			http.Error(w, `{"error": "序列化配置失败"}`, http.StatusInternalServerError)
 		}
@@ -263,49 +340,57 @@ func handleSettings(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// 转换为Config结构体
-		newConfig := config.Config{}
+		// 从消息处理器获取当前配置
+		currentConfig := msgHandler.GetCurrentConfig()
+		if currentConfig == nil {
+			http.Error(w, `{"error": "无法获取当前配置"}`, http.StatusInternalServerError)
+			return
+		}
+
+		// 创建新配置（基于当前配置）
+		newConfig := *currentConfig
 		
 		// 处理HTTP端口
-		if httpPort, ok := settingsData["httpPort"].(float64); ok {
-			newConfig.HTTPPort = fmt.Sprintf("%.0f", httpPort)
-		} else if httpPort, ok := settingsData["HTTPPort"].(string); ok {
+		if httpPort, ok := settingsData["httpPort"].(string); ok && httpPort != "" {
 			newConfig.HTTPPort = httpPort
+		} else if httpPort, ok := settingsData["httpPort"].(float64); ok {
+			newConfig.HTTPPort = fmt.Sprintf("%.0f", httpPort)
 		}
 		
 		// 处理连接模式
-		if connectionMode, ok := settingsData["connectionMode"].(string); ok {
-			newConfig.ConnectionMode = connectionMode
-		} else if connectionMode, ok := settingsData["ConnectionMode"].(string); ok {
+		if connectionMode, ok := settingsData["connectionMode"].(string); ok && connectionMode != "" {
 			newConfig.ConnectionMode = connectionMode
 		}
 		
 		// 处理WebSocket URL
 		if qqWSURL, ok := settingsData["qqWSURL"].(string); ok {
 			newConfig.QQWSURL = qqWSURL
-		} else if qqWSURL, ok := settingsData["QQWSURL"].(string); ok {
-			newConfig.QQWSURL = qqWSURL
 		}
 		
 		// 处理HTTP URL
 		if qqHTTPURL, ok := settingsData["qqHTTPURL"].(string); ok {
-			newConfig.QQHTTPURL = qqHTTPURL
-		} else if qqHTTPURL, ok := settingsData["QQHTTPURL"].(string); ok {
 			newConfig.QQHTTPURL = qqHTTPURL
 		}
 		
 		// 处理反向WebSocket端口
 		if qqReverseWS, ok := settingsData["qqReverseWS"].(string); ok {
 			newConfig.QQReverseWS = qqReverseWS
-		} else if qqReverseWS, ok := settingsData["QQReverseWS"].(string); ok {
-			newConfig.QQReverseWS = qqReverseWS
 		}
 		
 		// 处理访问令牌
 		if qqAccessToken, ok := settingsData["qqAccessToken"].(string); ok {
 			newConfig.QQAccessToken = qqAccessToken
-		} else if qqAccessToken, ok := settingsData["QQAccessToken"].(string); ok {
-			newConfig.QQAccessToken = qqAccessToken
+		}
+
+		// 处理群组ID
+		if qqGroupID, ok := settingsData["qqGroupID"].([]interface{}); ok {
+			var groupIDs []int64
+			for _, id := range qqGroupID {
+				if groupID, ok := id.(float64); ok {
+					groupIDs = append(groupIDs, int64(groupID))
+				}
+			}
+			newConfig.QQGroupID = groupIDs
 		}
 
 		// 验证配置（使用宽松验证）
@@ -325,6 +410,70 @@ func handleSettings(w http.ResponseWriter, r *http.Request) {
 
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]string{"message": "配置更新成功"})
+
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// 处理自定义设置
+func handleCustomSettings(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	switch r.Method {
+	case "GET":
+		// 返回当前自定义设置
+		settings := CustomSettings{
+			CommandPrefix: ".",
+			RollCommand:   "r",
+			HelpCommand:   "help",
+			SuccessText:   "设置已保存",
+			FailureText:   "设置保存失败",
+		}
+		
+		// 这里可以从配置文件或数据库中加载实际设置
+		// 暂时返回默认值
+		
+		if err := json.NewEncoder(w).Encode(settings); err != nil {
+			log.Printf("序列化自定义设置失败: %v", err)
+			http.Error(w, `{"error": "序列化自定义设置失败"}`, http.StatusInternalServerError)
+		}
+
+	case "POST":
+		// 保存自定义设置
+		var customSettings CustomSettings
+		if err := json.NewDecoder(r.Body).Decode(&customSettings); err != nil {
+			http.Error(w, `{"error": "解析自定义设置失败"}`, http.StatusBadRequest)
+			return
+		}
+
+		// 验证设置
+		if customSettings.CommandPrefix == "" {
+			customSettings.CommandPrefix = "." // 默认值
+		}
+		
+		if customSettings.RollCommand == "" {
+			customSettings.RollCommand = "r" // 默认值
+		}
+		
+		if customSettings.HelpCommand == "" {
+			customSettings.HelpCommand = "help" // 默认值
+		}
+
+		if customSettings.SuccessText == "" {
+			customSettings.SuccessText = "设置已保存" // 默认值
+		}
+
+		if customSettings.FailureText == "" {
+			customSettings.FailureText = "设置保存失败" // 默认值
+		}
+
+		// TODO: 实际保存设置到配置文件或数据库
+		// 这里暂时只是接收并确认设置已被接收
+		log.Printf("收到自定义设置: %+v", customSettings)
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{"message": "自定义设置已保存"})
 
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)

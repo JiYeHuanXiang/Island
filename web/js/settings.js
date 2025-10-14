@@ -268,10 +268,21 @@ const SettingsManager = {
         document.getElementById('sendToQQ').addEventListener('change', function() {
             const label = document.getElementById('targetLabel');
             label.textContent = this.checked ? '发送到QQ' : '本地处理';
+            // 保存发送目标设置
+            localStorage.setItem('sendToQQ', this.checked);
         });
 
         // 加载保存的设置
         this.loadSavedSettings();
+
+        // 初始化发送目标状态
+        const sendToQQ = localStorage.getItem('sendToQQ');
+        if (sendToQQ !== null) {
+            const checkbox = document.getElementById('sendToQQ');
+            checkbox.checked = JSON.parse(sendToQQ);
+            const label = document.getElementById('targetLabel');
+            label.textContent = checkbox.checked ? '发送到QQ' : '本地处理';
+        }
 
         Utils.addMessage('system', '设置管理器已初始化');
     }

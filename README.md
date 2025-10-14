@@ -235,9 +235,6 @@ island/
 │   └── types.go
 ├── handlers/           # 消息处理器
 │   └── message.go
-└── webview/            # 嵌入式浏览器
-    ├── browser.go
-    └── embedded_browser.go
 ```
 
 ### 添加新指令

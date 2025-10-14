@@ -34,15 +34,23 @@ const Utils = {
 
     // 模拟骰子投掷
     simulateDiceRoll(command) {
-        if (command.startsWith('.r ')) {
-            const diceExpr = command.substring(3);
+        // 获取自定义设置
+        const prefix = CustomSettings.getCommandPrefix();
+        const rollCommand = CustomSettings.getRollCommand();
+        const helpCommand = CustomSettings.getHelpCommand();
+        
+        // 处理投掷指令
+        if (command.startsWith(prefix + rollCommand + ' ')) {
+            const diceExpr = command.substring((prefix + rollCommand + ' ').length);
             return `掷骰结果: ${diceExpr} = 15 (6 + 5 + 4)`;
-        } else if (command === '.coc') {
+        } else if (command === prefix + rollCommand) {
+            return '请提供骰子表达式，例如: ' + prefix + rollCommand + ' 1d100';
+        } else if (command === prefix + helpCommand) {
+            return '可用命令: ' + prefix + rollCommand + ' [骰子表达式] - 掷骰子, ' + prefix + 'coc - COC角色生成, ' + prefix + 'dnd - DND角色生成, ' + prefix + helpCommand + ' - 显示帮助';
+        } else if (command === prefix + 'coc') {
             return 'COC角色生成: 力量65 体质70 体型55 敏捷60 外貌75 智力80 意志65 教育70 幸运50';
-        } else if (command === '.dnd') {
+        } else if (command === prefix + 'dnd') {
             return 'DND角色生成: 力量14 敏捷16 体质12 智力18 感知15 魅力13';
-        } else if (command === '.help') {
-            return '可用命令: .r [骰子表达式] - 掷骰子, .coc - COC角色生成, .dnd - DND角色生成, .help - 显示帮助';
         } else {
             return `未知命令: ${command}`;
         }
