@@ -69,6 +69,7 @@ func StartHTTPServer(appConfig *config.Config, handler *handlers.MessageHandler)
 	http.HandleFunc("/ws", handleWebSocket)
 	http.HandleFunc("/command", handleCommand)
 	http.HandleFunc("/api/settings", handleSettings)
+	http.HandleFunc("/api/command-output-settings", handleCommandOutputSettings)
 	log.Printf("Web服务器已启动 :%s", appConfig.HTTPPort)
 	if err := http.ListenAndServe(":"+appConfig.HTTPPort, nil); err != nil {
 		log.Fatalf("HTTP服务器错误: %v", err)
@@ -332,6 +333,82 @@ func handleSettings(w http.ResponseWriter, r *http.Request) {
 
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]string{"message": "配置更新成功"})
+
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// 处理指令输出设置
+func handleCommandOutputSettings(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	switch r.Method {
+	case "GET":
+		// 获取当前指令输出设置
+		if msgHandler == nil {
+			http.Error(w, `{"error": "消息处理器未初始化"}`, http.StatusInternalServerError)
+			return
+		}
+
+		currentConfig := msgHandler.GetCurrentConfig()
+		if currentConfig == nil {
+			// 如果无法获取配置，返回默认设置
+			defaultSettings := config.GetDefaultCommandOutputSettings()
+			if err := json.NewEncoder(w).Encode(defaultSettings); err != nil {
+				log.Printf("序列化默认指令输出设置失败: %v", err)
+				http.Error(w, `{"error": "序列化设置失败"}`, http.StatusInternalServerError)
+			}
+			return
+		}
+
+		// 如果配置中没有指令输出设置，使用默认值
+		outputSettings := currentConfig.CommandOutput
+		if outputSettings.RollCommand == "" && outputSettings.CocCommand == "" &&
+			outputSettings.DndCommand == "" && outputSettings.HelpCommand == "" &&
+			outputSettings.UnknownCommand == "" {
+			outputSettings = config.GetDefaultCommandOutputSettings()
+		}
+
+		if err := json.NewEncoder(w).Encode(outputSettings); err != nil {
+			log.Printf("序列化指令输出设置失败: %v", err)
+			http.Error(w, `{"error": "序列化设置失败"}`, http.StatusInternalServerError)
+		}
+
+	case "POST":
+		// 更新指令输出设置
+		if msgHandler == nil {
+			http.Error(w, `{"error": "消息处理器未初始化"}`, http.StatusInternalServerError)
+			return
+		}
+
+		var newSettings config.CommandOutputSettings
+		if err := json.NewDecoder(r.Body).Decode(&newSettings); err != nil {
+			http.Error(w, `{"error": "解析指令输出设置失败"}`, http.StatusBadRequest)
+			return
+		}
+
+		// 获取当前配置
+		currentConfig := msgHandler.GetCurrentConfig()
+		if currentConfig == nil {
+			http.Error(w, `{"error": "无法获取当前配置"}`, http.StatusInternalServerError)
+			return
+		}
+
+		// 更新指令输出设置
+		currentConfig.CommandOutput = newSettings
+
+		// 保存配置
+		if err := msgHandler.UpdateConfig(currentConfig); err != nil {
+			http.Error(w, `{"error": "更新配置失败: `+err.Error()+`"}`, http.StatusInternalServerError)
+			return
+		}
+
+		// 广播设置更新到所有WebSocket客户端
+		BroadcastToWeb(`{"type": "command_output_updated", "message": "指令输出设置已更新"}`)
+
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{"message": "指令输出设置更新成功"})
 
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)

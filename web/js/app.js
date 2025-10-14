@@ -188,6 +188,11 @@ const App = {
         // 初始化设置管理器
         SettingsManager.init();
         
+        // 初始化指令输出管理器
+        if (window.CommandOutputManager && window.CommandOutputManager.init) {
+            window.CommandOutputManager.init();
+        }
+        
         // 初始化事件监听器
         this.initEventListeners();
         
@@ -247,6 +252,18 @@ function sendCommand() {
 
 function handleKeyPress(event) {
     App.handleKeyPress(event);
+}
+
+function saveCommandOutputSettings() {
+    if (window.CommandOutputManager && window.CommandOutputManager.saveSettings) {
+        window.CommandOutputManager.saveSettings();
+    }
+}
+
+function resetCommandOutputSettings() {
+    if (window.CommandOutputManager && window.CommandOutputManager.resetSettings) {
+        window.CommandOutputManager.resetSettings();
+    }
 }
 
 // 页面加载时初始化

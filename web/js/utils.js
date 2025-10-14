@@ -34,6 +34,15 @@ const Utils = {
 
     // 模拟骰子投掷
     simulateDiceRoll(command) {
+        // 尝试使用自定义输出设置
+        if (window.CommandOutputManager && window.CommandOutputManager.getCustomOutput) {
+            const customOutput = window.CommandOutputManager.getCustomOutput(command);
+            if (customOutput) {
+                return customOutput;
+            }
+        }
+        
+        // 回退到默认输出
         if (command.startsWith('.r ')) {
             const diceExpr = command.substring(3);
             return `掷骰结果: ${diceExpr} = 15 (6 + 5 + 4)`;

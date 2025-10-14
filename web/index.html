@@ -20,6 +20,7 @@
                 <div class="tab active" onclick="switchTab('connection-settings')">连接设置</div>
                 <div class="tab" onclick="switchTab('admin-settings')">管理员设置</div>
                 <div class="tab" onclick="switchTab('group-management')">群组管理</div>
+                <div class="tab" onclick="switchTab('command-output-settings')">指令输出设置</div>
             </div>
             
             <!-- 连接设置 -->
@@ -114,6 +115,152 @@
                     <!-- 群组列表将在这里动态生成 -->
                 </div>
             </div>
+
+            <!-- 指令输出设置 -->
+            <div id="command-output-settings" class="command-output-settings">
+                <!-- 掷骰命令输出设置 -->
+                <div class="command-output-group">
+                    <div class="command-output-header">
+                        <div class="command-output-icon">R</div>
+                        <div class="command-output-title">掷骰命令输出格式</div>
+                    </div>
+                    <div class="command-output-description">
+                        自定义掷骰命令(.r)的输出格式。支持变量替换功能。
+                    </div>
+                    <textarea id="rollCommand" class="command-output-textarea" placeholder="掷骰结果: {dice} = {total} ({values})"></textarea>
+                </div>
+
+                <!-- COC角色生成输出设置 -->
+                <div class="command-output-group">
+                    <div class="command-output-header">
+                        <div class="command-output-icon">C</div>
+                        <div class="command-output-title">COC角色生成输出格式</div>
+                    </div>
+                    <div class="command-output-description">
+                        自定义COC角色生成命令(.coc)的输出格式。
+                    </div>
+                    <textarea id="cocCommand" class="command-output-textarea" placeholder="COC角色生成: 力量{str} 体质{con} 体型{siz} 敏捷{dex} 外貌{app} 智力{int} 意志{pow} 教育{edu} 幸运{luck}"></textarea>
+                </div>
+
+                <!-- DND角色生成输出设置 -->
+                <div class="command-output-group">
+                    <div class="command-output-header">
+                        <div class="command-output-icon">D</div>
+                        <div class="command-output-title">DND角色生成输出格式</div>
+                    </div>
+                    <div class="command-output-description">
+                        自定义DND角色生成命令(.dnd)的输出格式。
+                    </div>
+                    <textarea id="dndCommand" class="command-output-textarea" placeholder="DND角色生成: 力量{str} 敏捷{dex} 体质{con} 智力{int} 感知{wis} 魅力{cha}"></textarea>
+                </div>
+
+                <!-- 帮助命令输出设置 -->
+                <div class="command-output-group">
+                    <div class="command-output-header">
+                        <div class="command-output-icon">H</div>
+                        <div class="command-output-title">帮助命令输出格式</div>
+                    </div>
+                    <div class="command-output-description">
+                        自定义帮助命令(.help)的输出格式。
+                    </div>
+                    <textarea id="helpCommand" class="command-output-textarea" placeholder="可用命令: .r [骰子表达式] - 掷骰子, .coc - COC角色生成, .dnd - DND角色生成, .help - 显示帮助"></textarea>
+                </div>
+
+                <!-- 未知命令输出设置 -->
+                <div class="command-output-group">
+                    <div class="command-output-header">
+                        <div class="command-output-icon">U</div>
+                        <div class="command-output-title">未知命令输出格式</div>
+                    </div>
+                    <div class="command-output-description">
+                        自定义未知命令的输出格式。
+                    </div>
+                    <textarea id="unknownCommand" class="command-output-textarea" placeholder="未知命令: {command}"></textarea>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="command-output-actions">
+                    <button onclick="saveCommandOutputSettings()" class="btn-success btn-icon">
+                        <i class="fas fa-save"></i> 保存设置
+                    </button>
+                    <button onclick="resetCommandOutputSettings()" class="btn-secondary btn-icon">
+                        <i class="fas fa-undo"></i> 恢复默认
+                    </button>
+                </div>
+
+                <!-- 变量说明 -->
+                <div class="variables-help">
+                    <div class="variables-help-title">
+                        <i class="fas fa-info-circle"></i> 变量说明
+                    </div>
+                    <div class="variables-list">
+                        <div class="variable-item">
+                            <span class="variable-name">{command}</span>
+                            <span class="variable-desc">用户输入的命令</span>
+                        </div>
+                        <div class="variable-item">
+                            <span class="variable-name">{result}</span>
+                            <span class="variable-desc">命令处理结果</span>
+                        </div>
+                        <div class="variable-item">
+                            <span class="variable-name">{dice}</span>
+                            <span class="variable-desc">骰子表达式</span>
+                        </div>
+                        <div class="variable-item">
+                            <span class="variable-name">{total}</span>
+                            <span class="variable-desc">总点数</span>
+                        </div>
+                        <div class="variable-item">
+                            <span class="variable-name">{values}</span>
+                            <span class="variable-desc">各骰子点数</span>
+                        </div>
+                        <div class="variable-item">
+                            <span class="variable-name">{str}</span>
+                            <span class="variable-desc">力量属性</span>
+                        </div>
+                        <div class="variable-item">
+                            <span class="variable-name">{dex}</span>
+                            <span class="variable-desc">敏捷属性</span>
+                        </div>
+                        <div class="variable-item">
+                            <span class="variable-name">{con}</span>
+                            <span class="variable-desc">体质属性</span>
+                        </div>
+                        <div class="variable-item">
+                            <span class="variable-name">{int}</span>
+                            <span class="variable-desc">智力属性</span>
+                        </div>
+                        <div class="variable-item">
+                            <span class="variable-name">{wis}</span>
+                            <span class="variable-desc">感知属性</span>
+                        </div>
+                        <div class="variable-item">
+                            <span class="variable-name">{cha}</span>
+                            <span class="variable-desc">魅力属性</span>
+                        </div>
+                        <div class="variable-item">
+                            <span class="variable-name">{siz}</span>
+                            <span class="variable-desc">体型属性</span>
+                        </div>
+                        <div class="variable-item">
+                            <span class="variable-name">{app}</span>
+                            <span class="variable-desc">外貌属性</span>
+                        </div>
+                        <div class="variable-item">
+                            <span class="variable-name">{pow}</span>
+                            <span class="variable-desc">意志属性</span>
+                        </div>
+                        <div class="variable-item">
+                            <span class="variable-name">{edu}</span>
+                            <span class="variable-desc">教育属性</span>
+                        </div>
+                        <div class="variable-item">
+                            <span class="variable-name">{luck}</span>
+                            <span class="variable-desc">幸运属性</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- 命令输入区域 -->
@@ -154,6 +301,7 @@
 
     <script src="js/utils.js"></script>
     <script src="js/settings.js"></script>
+    <script src="js/command-output.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

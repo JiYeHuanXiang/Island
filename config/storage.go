@@ -144,7 +144,7 @@ func (cs *ConfigStorage) MergeWithEnv(fileCfg *Config) *Config {
 // LoadConfigFromEnv 仅从环境变量加载配置（用于合并）
 func LoadConfigFromEnv() (*Config, error) {
 	var cfg Config
-	
+
 	// 从环境变量加载配置
 	if port := os.Getenv("HTTP_PORT"); port != "" {
 		cfg.HTTPPort = port
@@ -171,6 +171,17 @@ func LoadConfigFromEnv() (*Config, error) {
 	cfg.QQReverseWS = TrimSpace(cfg.QQReverseWS)
 
 	return &cfg, nil
+}
+
+// GetDefaultCommandOutputSettings 获取默认的指令输出设置
+func GetDefaultCommandOutputSettings() CommandOutputSettings {
+	return CommandOutputSettings{
+		RollCommand:    "掷骰结果: {dice} = {total} ({values})",
+		CocCommand:     "COC角色生成: 力量{str} 体质{con} 体型{siz} 敏捷{dex} 外貌{app} 智力{int} 意志{pow} 教育{edu} 幸运{luck}",
+		DndCommand:     "DND角色生成: 力量{str} 敏捷{dex} 体质{con} 智力{int} 感知{wis} 魅力{cha}",
+		HelpCommand:    "可用命令: .r [骰子表达式] - 掷骰子, .coc - COC角色生成, .dnd - DND角色生成, .help - 显示帮助",
+		UnknownCommand: "未知命令: {command}",
+	}
 }
 
 // TrimSpace 辅助函数，处理空字符串

@@ -10,19 +10,29 @@ import (
 
 // Config 应用配置
 type Config struct {
-	HTTPPort      string  `env:"HTTP_PORT" envDefault:"8088"`
-	QQWSURL       string  `env:"QQ_WS_URL" envDefault:""`
-	QQHTTPURL     string  `env:"QQ_HTTP_URL" envDefault:""`
-	QQReverseWS   string  `env:"QQ_REVERSE_WS" envDefault:""`
-	QQAccessToken string  `env:"QQ_ACCESS_TOKEN" envDefault:""`
-	QQGroupID     []int64 `env:"QQ_GROUP_ID" envSeparator:","`
-	ConnectionMode string `env:"CONNECTION_MODE" envDefault:"websocket"` // websocket, http, reverse_websocket
+	HTTPPort       string                `env:"HTTP_PORT" envDefault:"8088"`
+	QQWSURL        string                `env:"QQ_WS_URL" envDefault:""`
+	QQHTTPURL      string                `env:"QQ_HTTP_URL" envDefault:""`
+	QQReverseWS    string                `env:"QQ_REVERSE_WS" envDefault:""`
+	QQAccessToken  string                `env:"QQ_ACCESS_TOKEN" envDefault:""`
+	QQGroupID      []int64               `env:"QQ_GROUP_ID" envSeparator:","`
+	ConnectionMode string                `env:"CONNECTION_MODE" envDefault:"websocket"` // websocket, http, reverse_websocket
+	CommandOutput  CommandOutputSettings `env:"COMMAND_OUTPUT" envDefault:""`
+}
+
+// CommandOutputSettings 指令输出文本设置
+type CommandOutputSettings struct {
+	RollCommand    string `json:"roll_command"`
+	CocCommand     string `json:"coc_command"`
+	DndCommand     string `json:"dnd_command"`
+	HelpCommand    string `json:"help_command"`
+	UnknownCommand string `json:"unknown_command"`
 }
 
 // ConnectionMode 连接模式枚举
 const (
-	ModeWebSocket      = "websocket"
-	ModeHTTP           = "http" 
+	ModeWebSocket        = "websocket"
+	ModeHTTP             = "http"
 	ModeReverseWebSocket = "reverse_websocket"
 )
 
@@ -80,7 +90,7 @@ func LoadConfig() (*Config, error) {
 		} else {
 			// 合并环境变量配置（环境变量优先级更高）
 			mergedCfg := storage.MergeWithEnv(fileCfg)
-			
+
 			if len(mergedCfg.QQGroupID) == 0 {
 				log.Println("未配置QQ_GROUP_ID，将处理所有群组消息")
 			}

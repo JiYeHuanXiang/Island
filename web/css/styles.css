@@ -508,3 +508,222 @@ input:checked + .slider:before {
 .pulse {
     animation: pulse 0.5s ease;
 }
+
+/* 指令输出设置样式 */
+.command-output-settings {
+    display: none;
+}
+
+.command-output-settings.active {
+    display: block;
+}
+
+.command-output-group {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    border-left: 4px solid var(--accent);
+}
+
+.command-output-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.command-output-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent);
+    color: white;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.command-output-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--dark);
+    flex: 1;
+}
+
+.command-output-description {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.command-output-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: var(--border-radius);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    resize: vertical;
+    transition: var(--transition);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.command-output-textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(88, 177, 159, 0.2);
+    outline: none;
+}
+
+.command-output-textarea:hover {
+    border-color: #ced4da;
+}
+
+.variables-help {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: var(--border-radius);
+    border-left: 3px solid var(--warning);
+}
+
+.variables-help-title {
+    font-weight: 600;
+    color: var(--warning);
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.variables-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.8rem;
+    margin-top: 0.8rem;
+}
+
+.variable-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0.4rem 0.8rem;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    font-size: 0.85rem;
+}
+
+.variable-name {
+    font-family: monospace;
+    background: #e9ecef;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--dark);
+    font-weight: 500;
+}
+
+.variable-desc {
+    color: #666;
+    font-size: 0.8rem;
+}
+
+.command-output-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(0,0,0,0.1);
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #6c757d, #868e96);
+}
+
+.btn-secondary:hover {
+    background: #868e96;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, var(--success), #2ecc71);
+}
+
+.btn-success:hover {
+    background: #2ecc71;
+}
+
+.btn-icon {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    font-size: 0.9rem;
+}
+
+.btn-icon svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .command-output-group {
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .variables-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .command-output-actions {
+        flex-direction: column;
+    }
+    
+    .command-output-textarea {
+        min-height: 100px;
+    }
+}
+
+/* 深色主题适配 */
+[data-theme="dark"] .command-output-group {
+    background: var(--card-bg);
+    border-left-color: var(--accent);
+}
+
+[data-theme="dark"] .command-output-textarea {
+    background: #2d3436;
+    border-color: #495057;
+    color: var(--text);
+}
+
+[data-theme="dark"] .command-output-textarea:focus {
+    border-color: var(--accent);
+}
+
+[data-theme="dark"] .variables-help {
+    background: #2d3436;
+    border-left-color: var(--warning);
+}
+
+[data-theme="dark"] .variable-item {
+    background: #1a1a1a;
+    border-color: #495057;
+}
+
+[data-theme="dark"] .variable-name {
+    background: #495057;
+    color: var(--text);
+}
+
+[data-theme="dark"] .variable-desc {
+    color: #adb5bd;
+}
