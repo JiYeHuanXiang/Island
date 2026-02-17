@@ -1,188 +1,505 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-    <title>Island:dice - COC/DND</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FateWeaver - TRPG 骰子机器人管理台</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1><i class="fas fa-dice-d20 fa-sm"></i> Island:dice - COC/DND骰子机器人</h1>
-            <p>一个AI制作的COC(克苏鲁的呼唤)和DND(龙与地下城)TRPG骰子机器人</p>
-        </div>
-        
-        <!-- 统一的系统设置 -->
-        <div class="card">
-            <div class="card-title"><i class="fas fa-cog"></i> 系统设置</div>
-            <div class="tab-container">
-                <div class="tab active" onclick="switchTab('connection-settings')">连接设置</div>
-                <div class="tab" onclick="switchTab('admin-settings')">管理员设置</div>
-                <div class="tab" onclick="switchTab('group-management')">群组管理</div>
-                <div class="tab" onclick="switchTab('custom-settings')">自定义设置</div>
+    <div class="app-container">
+        <!-- 侧边栏导航 -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-dice-d20"></i>
+                    </div>
+                    <div class="logo-text">
+                        <span class="logo-title">FateWeaver</span>
+                        <span class="logo-subtitle">TRPG Bot</span>
+                    </div>
+                </div>
+                <div class="connection-pulse" id="connectionPulse">
+                    <span class="pulse-dot"></span>
+                    <span class="pulse-text">未连接</span>
+                </div>
             </div>
             
-            <!-- 连接设置 -->
-            <div id="connection-settings" class="admin-settings active">
-                <!-- 基础设置 -->
-                <div class="settings-group">
-                    <div class="settings-label"><i class="fas fa-server"></i> HTTP端口:</div>
-                    <input type="text" id="httpPort" placeholder="8088">
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-view="dashboard">
+                    <i class="fas fa-th-large"></i>
+                    <span>仪表盘</span>
+                </a>
+                <a href="#" class="nav-item" data-view="logs">
+                    <i class="fas fa-terminal"></i>
+                    <span>实时日志</span>
+                </a>
+                <a href="#" class="nav-item" data-view="connection">
+                    <i class="fas fa-plug"></i>
+                    <span>连接管理</span>
+                </a>
+                <a href="#" class="nav-item" data-view="config">
+                    <i class="fas fa-cogs"></i>
+                    <span>规则配置</span>
+                </a>
+                <a href="#" class="nav-item" data-view="sandbox">
+                    <i class="fas fa-flask"></i>
+                    <span>调试沙盒</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="server-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-microchip"></i>
+                        <span>CPU</span>
+                        <span class="stat-value" id="cpuUsage">--</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-memory"></i>
+                        <span>MEM</span>
+                        <span class="stat-value" id="memUsage">--</span>
+                    </div>
                 </div>
-
-                <!-- 连接方式选择 -->
-                <div class="settings-group">
-                    <div class="settings-label"><i class="fas fa-cogs"></i> 连接方式:</div>
-                    <select id="connectionMode" onchange="onConnectionModeChange()">
-                        <option value="websocket">WebSocket</option>
-                        <option value="http">HTTP API</option>
-                        <option value="reverse_ws">反向WebSocket</option>
-                    </select>
+                <div class="version-info">
+                    <span>v1.0.0</span>
                 </div>
+            </div>
+        </aside>
 
-                <!-- WebSocket 设置 -->
-                <div id="websocketSettings" class="connection-settings">
-                    <div class="settings-group">
-                        <div class="settings-label"><i class="fas fa-network-wired"></i> WebSocket URL:</div>
-                        <input type="text" id="wsUrl" placeholder="ws://127.0.0.1:3009">
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 顶部栏 -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="menu-toggle" id="menuToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="breadcrumb">
+                        <span class="breadcrumb-item" id="currentView">仪表盘</span>
+                    </div>
+                </div>
+                <div class="topbar-right">
+                    <button class="topbar-btn" id="emergencyStop" title="紧急停止">
+                        <i class="fas fa-stop-circle"></i>
+                    </button>
+                    <button class="topbar-btn" id="refreshBtn" title="刷新">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- 视图容器 -->
+            <div class="view-container">
+                <!-- 仪表盘视图 -->
+                <div class="view active" id="view-dashboard">
+                    <div class="view-header">
+                        <h1><i class="fas fa-th-large"></i> 仪表盘</h1>
+                        <p>实时监控骰子机器人运行状态</p>
+                    </div>
+                    
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon dice">
+                                <i class="fas fa-dice"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-label">今日投掷</span>
+                                <span class="stat-number" id="todayRolls">0</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon groups">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-label">活跃群组</span>
+                                <span class="stat-number" id="activeGroups">0</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon uptime">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-label">运行时间</span>
+                                <span class="stat-number" id="uptime">--:--:--</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon messages">
+                                <i class="fas fa-comments"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-label">消息总数</span>
+                                <span class="stat-number" id="totalMessages">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quick-actions">
+                        <h3><i class="fas fa-bolt"></i> 快捷操作</h3>
+                        <div class="action-buttons">
+                            <button class="action-btn" onclick="reloadConfig()">
+                                <i class="fas fa-sync"></i>
+                                <span>重载配置</span>
+                            </button>
+                            <button class="action-btn" onclick="clearCache()">
+                                <i class="fas fa-broom"></i>
+                                <span>清理缓存</span>
+                            </button>
+                            <button class="action-btn" onclick="exportLogs()">
+                                <i class="fas fa-download"></i>
+                                <span>导出日志</span>
+                            </button>
+                            <button class="action-btn danger" onclick="restartBot()">
+                                <i class="fas fa-redo"></i>
+                                <span>重启机器人</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="recent-activity">
+                        <h3><i class="fas fa-history"></i> 最近活动</h3>
+                        <div class="activity-list" id="recentActivity">
+                            <div class="activity-item">
+                                <div class="activity-icon">
+                                    <i class="fas fa-info-circle"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <span class="activity-text">等待连接...</span>
+                                    <span class="activity-time">--:--:--</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- HTTP API 设置 -->
-                <div id="httpSettings" class="connection-settings" style="display: none;">
-                    <div class="settings-group">
-                        <div class="settings-label"><i class="fas fa-server"></i> HTTP API URL:</div>
-                        <input type="text" id="httpUrl" placeholder="http://127.0.0.1:6700">
+                <!-- 日志视图 -->
+                <div class="view" id="view-logs">
+                    <div class="view-header">
+                        <h1><i class="fas fa-terminal"></i> 实时日志</h1>
+                        <p>监控机器人运行日志，支持过滤和搜索</p>
                     </div>
-                    <div class="settings-group">
-                        <div class="settings-label"><i class="fas fa-key"></i> Access Token:</div>
-                        <input type="password" id="httpToken" placeholder="可选，如果配置了访问令牌">
+                    
+                    <div class="log-toolbar">
+                        <div class="log-filters">
+                            <div class="filter-group">
+                                <label>类型筛选:</label>
+                                <select id="logTypeFilter" onchange="filterLogs()">
+                                    <option value="all">全部</option>
+                                    <option value="system">系统</option>
+                                    <option value="dice">骰子</option>
+                                    <option value="chat">聊天</option>
+                                    <option value="error">错误</option>
+                                </select>
+</div>
+                            <div class="filter-group">
+                                <label>级别:</label>
+                                <select id="logLevelFilter" onchange="filterLogs()">
+                                    <option value="all">全部</option>
+                                    <option value="info">信息</option>
+                                    <option value="warn">警告</option>
+                                    <option value="error">错误</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="log-search">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="logSearchInput" placeholder="搜索日志..." oninput="filterLogs()">
+                        </div>
+                        <div class="log-actions">
+                            <button class="toolbar-btn" id="autoScrollBtn" onclick="toggleAutoScroll()" title="自动滚动">
+                                <i class="fas fa-arrow-down"></i>
+                            </button>
+                            <button class="toolbar-btn" onclick="clearLogs()" title="清空日志">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button class="toolbar-btn" onclick="exportLogs()" title="导出日志">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="log-terminal" id="logTerminal">
+                        <div class="log-content" id="logContent">
+                            <div class="log-line system">
+                                <span class="log-time">--:--:--</span>
+                                <span class="log-level">[系统]</span>
+                                <span class="log-message">等待连接服务器...</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- 反向WebSocket 设置 -->
-                <div id="reverseWsSettings" class="connection-settings" style="display: none;">
-                    <div class="settings-group">
-                        <div class="settings-label"><i class="fas fa-exchange-alt"></i> 反向WS端口:</div>
-                        <input type="text" id="reverseWsPort" placeholder="8088">
+                <!-- 连接管理视图 -->
+                <div class="view" id="view-connection">
+                    <div class="view-header">
+                        <h1><i class="fas fa-plug"></i> 连接管理</h1>
+                        <p>配置机器人与 QQ 平台的连接方式</p>
+                    </div>
+                    
+                    <div class="connection-cards">
+                        <div class="connection-card">
+                            <div class="card-header">
+                                <div class="card-icon">
+                                    <i class="fas fa-network-wired"></i>
+                                </div>
+                                <div class="card-title">
+                                    <h3>WebSocket 直连</h3>
+                                    <p>直接连接到 QQ 机器人 WebSocket 服务</p>
+                                </div>
+                                <label class="switch">
+                                    <input type="radio" name="connectionMode" value="websocket" onchange="onConnectionModeChange()">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="card-body" id="websocketSettings">
+                                <div class="form-group">
+                                    <label>WebSocket 地址</label>
+                                    <input type="text" id="wsUrl" placeholder="ws://127.0.0.1:3009">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="connection-card">
+                            <div class="card-header">
+                                <div class="card-icon">
+                                    <i class="fas fa-server"></i>
+                                </div>
+                                <div class="card-title">
+                                    <h3>HTTP API</h3>
+                                    <p>通过 HTTP API 与 QQ 机器人通信</p>
+                                </div>
+                                <label class="switch">
+                                    <input type="radio" name="connectionMode" value="http" onchange="onConnectionModeChange()">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="card-body" id="httpSettings" style="display: none;">
+                                <div class="form-group">
+                                    <label>HTTP API 地址</label>
+                                    <input type="text" id="httpUrl" placeholder="http://127.0.0.1:6700">
+                                </div>
+                                <div class="form-group">
+                                    <label>Access Token</label>
+                                    <input type="password" id="httpToken" placeholder="可选的访问令牌">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="connection-card">
+                            <div class="card-header">
+                                <div class="card-icon">
+                                    <i class="fas fa-exchange-alt"></i>
+                                </div>
+                                <div class="card-title">
+                                    <h3>反向 WebSocket</h3>
+                                    <p>QQ 机器人连接到本服务</p>
+                                </div>
+                                <label class="switch">
+                                    <input type="radio" name="connectionMode" value="reverse_ws" onchange="onConnectionModeChange()">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="card-body" id="reverseWsSettings" style="display: none;">
+                                <div class="form-group">
+                                    <label>监听端口</label>
+                                    <input type="text" id="reverseWsPort" placeholder="8088">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="connection-actions">
+                        <button class="btn btn-primary" onclick="testConnection()">
+                            <i class="fas fa-plug"></i>
+                            测试连接
+                        </button>
+                        <button class="btn btn-success" onclick="connect()">
+                            <i class="fas fa-link"></i>
+                            <span id="connectBtnText">连接</span>
+                        </button>
+                        <button class="btn btn-danger" onclick="disconnect()" id="disconnectBtn" style="display: none;">
+                            <i class="fas fa-unlink"></i>
+                            断开连接
+                        </button>
+                    </div>
+                    
+                    <div class="connection-status">
+                        <div class="status-indicator" id="connectionStatus">
+                            <div class="status-dot offline"></div>
+                            <span class="status-text">未连接</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- 连接按钮 -->
-                <div class="settings-group">
-                    <div class="settings-label"></div>
-                    <button onclick="connect()" id="connectBtn"><i class="fas fa-link"></i> 连接</button>
-                    <button onclick="disconnect()" id="disconnectBtn" style="display: none;" class="btn-danger"><i class="fas fa-unlink"></i> 断开连接</button>
-                </div>
-
-                <div class="settings-group">
-                    <div class="settings-label"><i class="fas fa-paper-plane"></i> 发送目标:</div>
-                    <div class="switch-container">
-                        <label class="switch">
-                            <input type="checkbox" id="sendToQQ">
-                            <span class="slider"></span>
-                        </label>
-                        <span class="switch-label" id="targetLabel">本地处理</span>
+                <!-- 规则配置视图 -->
+                <div class="view" id="view-config">
+                    <div class="view-header">
+                        <h1><i class="fas fa-cogs"></i> 规则配置</h1>
+                        <p>配置骰子规则和插件功能</p>
+                    </div>
+                    
+                    <div class="config-sections">
+                        <div class="config-section">
+                            <h3><i class="fas fa-sliders-h"></i> 基本设置</h3>
+                            <div class="config-grid">
+                                <div class="config-item">
+                                    <label>指令前缀</label>
+                                    <input type="text" id="commandPrefix" value="." placeholder="例如: .">
+                                </div>
+                                <div class="config-item">
+                                    <label>投掷指令</label>
+                                    <input type="text" id="rollCommand" value="r" placeholder="例如: r">
+                                </div>
+                                <div class="config-item">
+                                    <label>帮助指令</label>
+                                    <input type="text" id="helpCommand" value="help" placeholder="例如: help">
+                                </div>
+                                <div class="config-item">
+                                    <label>管理员 QQ</label>
+                                    <input type="text" id="adminQQ" placeholder="管理员QQ号">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="config-section">
+                            <h3><i class="fas fa-comment-alt"></i> 提示文本</h3>
+                            <div class="config-grid">
+                                <div class="config-item">
+                                    <label>成功提示</label>
+                                    <input type="text" id="successText" value="设置已保存" placeholder="成功提示文本">
+                                </div>
+                                <div class="config-item">
+                                    <label>失败提示</label>
+                                    <input type="text" id="failureText" value="设置保存失败" placeholder="失败提示文本">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="config-section">
+                            <h3><i class="fas fa-puzzle-piece"></i> 插件开关</h3>
+                            <div class="toggle-list">
+                                <div class="toggle-item">
+                                    <div class="toggle-info">
+                                        <span class="toggle-label">COC7 规则</span>
+                                        <span class="toggle-desc">启用克苏鲁的呼唤第七版规则</span>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" id="enableCOC7" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="toggle-item">
+                                    <div class="toggle-info">
+                                        <span class="toggle-label">DND 规则</span>
+                                        <span class="toggle-desc">启用龙与地下城规则</span>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" id="enableDND" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="toggle-item">
+                                    <div class="toggle-info">
+                                        <span class="toggle-label">牌堆功能</span>
+                                        <span class="toggle-desc">启用扑克牌堆叠抽取功能</span>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" id="enableDeck">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="toggle-item">
+                                    <div class="toggle-info">
+                                        <span class="toggle-label">角色卡</span>
+                                        <span class="toggle-desc">启用角色卡片管理功能</span>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" id="enableCharacter">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="config-actions">
+                        <button class="btn btn-primary" onclick="saveConfig()">
+                            <i class="fas fa-save"></i>
+                            保存配置
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetConfig()">
+                            <i class="fas fa-undo"></i>
+                            重置
+                        </button>
                     </div>
                 </div>
 
-                <!-- 连接状态 -->
-                <div id="connectionStatus" class="status status-disconnected">
-                    <i class="fas fa-exclamation-circle"></i> 未连接
+                <!-- 调试沙盒视图 -->
+                <div class="view" id="view-sandbox">
+                    <div class="view-header">
+                        <h1><i class="fas fa-flask"></i> 调试沙盒</h1>
+                        <p>在不影响真实群组的情况下测试机器人功能</p>
+                    </div>
+                    
+                    <div class="sandbox-container">
+                        <div class="sandbox-input">
+                            <h3><i class="fas fa-paper-plane"></i> 输入测试命令</h3>
+                            <div class="input-area">
+                                <input type="text" id="sandboxCommand" placeholder="输入命令测试，例如: .r 3d6" onkeypress="handleSandboxKeyPress(event)">
+                                <button class="btn btn-primary" onclick="runSandboxCommand()">
+                                    <i class="fas fa-play"></i>
+                                    执行
+                                </button>
+                            </div>
+                            <div class="command-hints">
+                                <span>常用命令:</span>
+                                <code onclick="insertCommand('.r 3d6')">.r 3d6</code>
+                                <code onclick="insertCommand('.r 1d100')">.r 1d100</code>
+                                <code onclick="insertCommand('.coc')">.coc</code>
+                                <code onclick="insertCommand('.dnd')">.dnd</code>
+                                <code onclick="insertCommand('.help')">.help</code>
+                            </div>
+                        </div>
+                        
+                        <div class="sandbox-output">
+                            <h3><i class="fas fa-robot"></i> 机器人响应</h3>
+                            <div class="output-tabs">
+                                <button class="tab-btn active" data-tab="rendered">渲染结果</button>
+                                <button class="tab-btn" data-tab="raw">原始 JSON</button>
+                            </div>
+                            <div class="output-content">
+                                <div class="tab-panel active" id="renderedOutput">
+                                    <div class="sandbox-message bot">
+                                        <div class="message-avatar">
+                                            <i class="fas fa-robot"></i>
+                                        </div>
+                                        <div class="message-content">
+                                            <span class="message-sender">FateWeaver Bot</span>
+                                            <p class="message-text">等待输入命令...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="tab-panel" id="rawOutput">
+                                    <pre><code id="rawJson">// JSON 响应将显示在这里</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-
-            <!-- 管理员设置 -->
-            <div id="admin-settings" class="admin-settings">
-                <div class="settings-group">
-                    <div class="settings-label"><i class="fas fa-user-shield"></i> 管理员QQ号:</div>
-                    <input type="text" id="adminQQ" placeholder="输入管理员QQ号">
-                </div>
-                <div class="settings-group">
-                    <div class="settings-label"></div>
-                    <button onclick="saveAdminSettings()"><i class="fas fa-save"></i> 保存管理员设置</button>
-                </div>
-            </div>
-
-            <!-- 群组管理 -->
-            <div id="group-management" class="admin-settings">
-                <div class="settings-group">
-                    <div class="settings-label"><i class="fas fa-users"></i> 群组列表:</div>
-                    <button onclick="refreshGroups()"><i class="fas fa-sync-alt"></i> 刷新群组</button>
-                </div>
-                <div id="groupList" class="group-list">
-                    <!-- 群组列表将在这里动态生成 -->
-                </div>
-            </div>
-
-            <!-- 自定义设置 -->
-            <div id="custom-settings" class="admin-settings">
-                <div class="settings-group">
-                    <div class="settings-label"><i class="fas fa-magic"></i> 指令前缀:</div>
-                    <input type="text" id="commandPrefix" placeholder="请输入指令前缀，例如: ." value=".">
-                </div>
-                
-                <div class="settings-group">
-                    <div class="settings-label"><i class="fas fa-dice"></i> 投掷指令:</div>
-                    <input type="text" id="rollCommand" placeholder="投掷指令，例如: r" value="r">
-                </div>
-                
-                <div class="settings-group">
-                    <div class="settings-label"><i class="fas fa-question-circle"></i> 帮助指令:</div>
-                    <input type="text" id="helpCommand" placeholder="帮助指令，例如: help" value="help">
-                </div>
-                
-                <div class="settings-group">
-                    <div class="settings-label"><i class="fas fa-comment"></i> 成功提示文本:</div>
-                    <input type="text" id="successText" placeholder="保存成功时的提示文本" value="设置已保存">
-                </div>
-                <div class="settings-group">
-                    <div class="settings-label"><i class="fas fa-comment"></i> 失败提示文本:</div>
-                    <input type="text" id="failureText" placeholder="保存失败时的提示文本" value="设置保存失败">
-                </div>
-                <div class="settings-group">
-                    <div class="settings-label"></div>
-                    <button onclick="saveCustomSettings()"><i class="fas fa-save"></i> 保存自定义设置</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 命令输入区域 -->
-        <div class="card">
-            <div class="card-title"><i class="fas fa-terminal"></i> 命令输入</div>
-            <div class="input-group">
-                <input type="text" id="commandInput" placeholder="输入骰子命令，例如: .r 3d6" onkeypress="handleKeyPress(event)">
-                <button onclick="sendCommand()"><i class="fas fa-paper-plane"></i> 发送</button>
-            </div>
-        </div>
-
-        <!-- 输出区域 -->
-        <div class="card">
-            <div class="card-title"><i class="fas fa-scroll"></i> 输出日志</div>
-            <div id="output"></div>
-        </div>
-
-        <!-- 帮助信息 -->
-        <div class="card">
-            <div class="card-title"><i class="fas fa-question-circle"></i> 帮助信息</div>
-            <div class="help-content">
-                <p><strong>常用命令:</strong></p>
-                <ul>
-                    <li><strong>.r</strong> - 掷骰子 (例如: .r 3d6)</li>
-                    <li><strong>.coc</strong> - COC角色生成</li>
-                    <li><strong>.dnd</strong> - DND角色生成</li>
-                    <li><strong>.help</strong> - 显示帮助信息</li>
-                </ul>
-                <p><strong>连接方式说明:</strong></p>
-                <ul>
-                    <li><strong>WebSocket</strong> - 直接连接到QQ机器人的WebSocket服务</li>
-                    <li><strong>HTTP API</strong> - 通过HTTP API与QQ机器人通信</li>
-                    <li><strong>反向WebSocket</strong> - QQ机器人连接到本程序</li>
-                </ul>
-            </div>
-        </div>
+        </main>
     </div>
+
+    <!-- 通知容器 -->
+    <div class="notification-container" id="notificationContainer"></div>
 
     <script src="js/utils.js"></script>
     <script src="js/settings.js"></script>

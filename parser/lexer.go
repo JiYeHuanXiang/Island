@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"fmt"
+	"log"
 	"strconv"
 	"unicode"
 	"unicode/utf8"
@@ -53,22 +53,18 @@ func (l *Lexer) Lex(lval *yySymType) int {
 
 	// 处理数字
 	if unicode.IsDigit(r) {
-		token := l.lexNumber(lval)
-		fmt.Printf("识别到数字: %d [token=%d]\n", lval.Num, token)
-		return token
+		return l.lexNumber(lval)
 	}
 
 	// 首先检查df操作符
 	if l.pos+1 < len(l.input) && l.input[l.pos:l.pos+2] == "df" {
 		l.pos += 2
-		fmt.Printf("识别到df运算符 (等同于f) [token=%d]\n", F)
 		return F
 	}
 
 	// 处理d操作符
 	if r == 'd' || r == 'D' {
 		l.pos += width
-		fmt.Printf("识别到d运算符 [token=%d]\n", D)
 		return D
 	}
 
@@ -256,5 +252,5 @@ func isIdentPart(r rune) bool {
 }
 
 func (l *Lexer) Error(s string) {
-	fmt.Printf("语法错误: %s\n", s)
+	log.Printf("语法错误: %s", s)
 }

@@ -55,8 +55,8 @@ func (cs *ConfigStorage) LoadFromFile() (*Config, error) {
 		return nil, fmt.Errorf("解析配置文件失败: %w", err)
 	}
 
-	// 验证配置
-	if err := cfg.Validate(); err != nil {
+	// 使用宽松验证，允许URL为空（用户可能稍后配置）
+	if err := cfg.ValidateForSave(); err != nil {
 		return nil, fmt.Errorf("配置验证失败: %w", err)
 	}
 
